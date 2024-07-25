@@ -1,13 +1,12 @@
-import { ChatCompletionFunction } from "alphawave";
-import { Codepilot } from "../Codepilot";
+
 import * as fs from "fs/promises";
 import * as path from "path";
-import { Colorize } from "../internals";
+import Colorize from "./colorize.js";
 
 /**
  * Schema for a function that creates a file at the specified path.
  */
-const createFileFunction: ChatCompletionFunction = {
+const createFileFunction = {
     name: "createFile",
     description: "Creates a new file at the specified path. Only use for new files not existing ones.",
     parameters: {
@@ -29,8 +28,8 @@ const createFileFunction: ChatCompletionFunction = {
 /**
  * Adds the createFile function to the codepilot instance.
  */
-export function addCreateFile(codepilot: Codepilot): void {
-    codepilot.addFunction(createFileFunction, async (args: any) => {
+export function addCreateFile(codepilot) {
+    codepilot.addFunction(createFileFunction, async (args) => {
         const { filePath, contents } = args;
 
         // Check if the file already exists
@@ -51,7 +50,13 @@ export function addCreateFile(codepilot: Codepilot): void {
             console.log(Colorize.highlight(`Created a new file: ${filePath}`));
             return `Successfully created file at ${filePath}`;
         } catch (error) {
-            return `Failed to create file at ${filePath} due to the following error:\n${(error as Error).message}`;
+            return `Failed to create file at ${filePath} due to the following error:\n${error.message}`;
         }
     });
+}
+
+
+export function registerFunctions(codepilot) {
+    // Add the createFile function to the codepilot instance
+    addCreateFile(codepilot);
 }
