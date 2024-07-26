@@ -2,52 +2,52 @@ import yargs from "yargs/yargs"
 import { hideBin } from "yargs/helpers"
 import Colorize from "./colorize.js"
 import { CodeIndex } from "./code-index.js"
-import { Codepilot } from "./codepilot.js"
+import Coderobot from "./coderobot.js"
 import { registerFunctions } from "./create-file.js"
 /**
- * Defines the commands supported by the Codepilot CLI.
+ * Defines the commands supported by the Coderobot CLI.
  */
 export async function run() {
   // prettier-ignore
   const args = await yargs(hideBin(process.argv))
-        .scriptName('codepilot')
+        .scriptName('Coderobot')
         .command('$0', 'chat mode', {}, async () => {
         // Ensure index exists and has keys
         const index = new CodeIndex();
         if (!await index.isCreated()) {
             console.log(Colorize.output([
-                `We need to first create an index before you can chat with Codepilot.`,
+                `We need to first create an index before you can chat with Coderobot.`,
                 `You'll need to provide an OpenAI API key and a source folder to index.`,
                 `You can create an OpenAI API key at https://platform.openai.com/account/api-keys.`,
                 `A paid account is recommended but OpenAI will give you $5 in free credits to get started.`,
                 `Once you have your OpenAI API key, you can create a new index by running:\n`,
-                `codepilot create --key <api key> --source <source folder> [--source <additional source folder>]\n`,
+                `Coderobot create --key <api key> --source <source folder> [--source <additional source folder>]\n`,
                 `By default, all files under your source folders will be included in the index.`,
                 `If you'd only like certain file extensions to be indexed, you can add the "--extension <included extensions> [--extension <additional extension>]" option.`,
-                `Once the index has finished building, you can start chatting with Codepilot by running:\n`,
-                `codepilot\n`,
+                `Once the index has finished building, you can start chatting with Coderobot by running:\n`,
+                `Coderobot\n`,
             ].join(`\n`)));
             return;
         }
         if (!await index.hasKeys()) {
             console.log(Colorize.output([
-                `A Codepilot index was found but you haven't configured your personal OpenAI key.`,
+                `A Coderobot index was found but you haven't configured your personal OpenAI key.`,
                 `You'll need to provide an OpenAI API key before you can continue.`,
                 `You can create an OpenAI API key at https://platform.openai.com/account/api-keys.`,
                 `A paid account is recommended but OpenAI will give you $5 in free credits to get started.`,
                 `Once you have your OpenAI API key, you can configure your local index to use that key by running:\n`,
-                `codepilot set --key <api key>\n`,
-                `Once you've configured your personal key, you can start chatting with Codepilot by running:\n`,
-                `codepilot\n`,
+                `Coderobot set --key <api key>\n`,
+                `Once you've configured your personal key, you can start chatting with Coderobot by running:\n`,
+                `Coderobot\n`,
             ].join(`\n`)));
             return;
         }
         // Load index
         await index.load();
-        // Start a Codepilot chat session
-        const codepilot = new Codepilot(index);
-        registerFunctions(codepilot);
-        await codepilot.chat();
+        // Start a Coderobot chat session
+        const coderobot = new Coderobot(index);
+        registerFunctions(coderobot);
+        await coderobot.chat();
     })
         .command('create', `creates a new code index`, (yargs) => {
         return yargs
@@ -91,12 +91,12 @@ export async function run() {
         console.log(Colorize.output([
             `\nThe index for your source code has been built.`,
             `You can add additional sources and/or extension filters to your index by running:\n`,
-            `codepilot add --source <source folder> [--source <additional source folder>] [--extension <included extensions> [--extension <additional extension>]]\n`,
+            `Coderobot add --source <source folder> [--source <additional source folder>] [--extension <included extensions> [--extension <additional extension>]]\n`,
             `You current model is '${index.config.model}'. You can change the model by running:\n`,
-            `codepilot set --model <model name>\n`,
+            `Coderobot set --model <model name>\n`,
             `Only chat completion based models are currently supported.`,
-            `To start chatting with Codepilot simply run:\n`,
-            `codepilot\n`,
+            `To start chatting with Coderobot simply run:\n`,
+            `Coderobot\n`,
         ].join('\n')));
     })
         .command('delete', `delete an existing code index`, {}, async (args) => {
@@ -122,17 +122,17 @@ export async function run() {
         // Ensure index exists and has keys
         const index = new CodeIndex();
         if (!await index.isCreated()) {
-            console.log(Colorize.output(`No index was found. Please run 'codepilot create' first.`));
+            console.log(Colorize.output(`No index was found. Please run 'Coderobot create' first.`));
             return;
         }
         if (!await index.hasKeys()) {
             console.log(Colorize.output([
-                `A Codepilot index was found but you haven't configured your personal OpenAI key.`,
+                `A Coderobot index was found but you haven't configured your personal OpenAI key.`,
                 `You'll need to provide an OpenAI API key before you can continue.`,
                 `You can create an OpenAI API key at https://platform.openai.com/account/api-keys.`,
                 `A paid account is recommended but OpenAI will give you $5 in free credits to get started.`,
                 `Once you have your OpenAI API key, you can configure your local index to use that key by running:\n`,
-                `codepilot set --key <api key>\n`,
+                `Coderobot set --key <api key>\n`,
                 `Once you've configured your personal key, you can re-run your command.`,
             ].join(`\n`)));
             return;
@@ -146,24 +146,24 @@ export async function run() {
         console.log(Colorize.output([
             `Your sources and/or extensions have been updated.`,
             `You can rebuild your index by running:\n`,
-            `codepilot rebuild\n`,
+            `Coderobot rebuild\n`,
         ].join('\n')));
     })
         .command('rebuild', 'chat mode', {}, async () => {
         // Ensure index exists and has keys
         const index = new CodeIndex();
         if (!await index.isCreated()) {
-            console.log(Colorize.output(`No index was found. Please run 'codepilot create' first.`));
+            console.log(Colorize.output(`No index was found. Please run 'Coderobot create' first.`));
             return;
         }
         if (!await index.hasKeys()) {
             console.log(Colorize.output([
-                `A Codepilot index was found but you haven't configured your personal OpenAI key.`,
+                `A Coderobot index was found but you haven't configured your personal OpenAI key.`,
                 `You'll need to provide an OpenAI API key before you can continue.`,
                 `You can create an OpenAI API key at https://platform.openai.com/account/api-keys.`,
                 `A paid account is recommended but OpenAI will give you $5 in free credits to get started.`,
                 `Once you have your OpenAI API key, you can configure your local index to use that key by running:\n`,
-                `codepilot set --key <api key>\n`,
+                `Coderobot set --key <api key>\n`,
                 `Once you've configured your personal key, you can re-run your command.`,
             ].join(`\n`)));
             return;
@@ -173,8 +173,8 @@ export async function run() {
         await index.rebuild();
         console.log(Colorize.output([
             `\nThe index for your source code has been rebuilt.`,
-            `To start chatting with Codepilot run:\n`,
-            `codepilot\n`,
+            `To start chatting with Coderobot run:\n`,
+            `Coderobot\n`,
         ].join('\n')));
     })
         .command('remove', `removes source folders and/or extension filters from your code index`, (yargs) => {
@@ -195,17 +195,17 @@ export async function run() {
         // Ensure index exists and has keys
         const index = new CodeIndex();
         if (!await index.isCreated()) {
-            console.log(Colorize.output(`No index was found. Please run 'codepilot create' first.`));
+            console.log(Colorize.output(`No index was found. Please run 'Coderobot create' first.`));
             return;
         }
         if (!await index.hasKeys()) {
             console.log(Colorize.output([
-                `A Codepilot index was found but you haven't configured your personal OpenAI key.`,
+                `A Coderobot index was found but you haven't configured your personal OpenAI key.`,
                 `You'll need to provide an OpenAI API key before you can continue.`,
                 `You can create an OpenAI API key at https://platform.openai.com/account/api-keys.`,
                 `A paid account is recommended but OpenAI will give you $5 in free credits to get started.`,
                 `Once you have your OpenAI API key, you can configure your local index to use that key by running:\n`,
-                `codepilot set --key <api key>\n`,
+                `Coderobot set --key <api key>\n`,
                 `Once you've configured your personal key, you can re-run your command.`,
             ].join(`\n`)));
             return;
@@ -219,7 +219,7 @@ export async function run() {
         console.log(Colorize.output([
             `Your sources and/or extensions have been updated.`,
             `You can rebuild your index by running:\n`,
-            `codepilot rebuild\n`,
+            `Coderobot rebuild\n`,
         ].join('\n')));
     })
         .command('set', `creates a new code index`, (yargs) => {
@@ -251,7 +251,6 @@ export async function run() {
         .parseAsync();
 }
 
-
 function getOptimalConfig(model, sources, extensions) {
   const config = {
     model,
@@ -273,16 +272,13 @@ function getOptimalConfig(model, sources, extensions) {
   } else if (model.startsWith("gpt-4")) {
     config.max_input_tokens = 6000
     config.max_tokens = 1500
-  } 
-  else if (model.startsWith("gpt-4o")) {
+  } else if (model.startsWith("gpt-4o")) {
     config.max_input_tokens = 12000
-    config.max_tokens =4000
-  }
-  else {
+    config.max_tokens = 4000
+  } else {
     throw new Error(`The '${model}' model is not yet supported.`)
   }
   return config
 }
 
-
-run();
+run()

@@ -3,34 +3,42 @@ import colorizer from 'json-colorizer';
 /**
  * Colorizes text for the console.
  */
-class Colorize {
+const Colorize = {
+    colors: {
+        red: '\u001B[31;1m',
+        blue: '\u001B[34;1m',
+        green: '\u001B[32m',
+        gray: '\u001B[90m',
+        magenta: '\u001B[35;1m',
+        yellow: '\u001B[33m',
+        reset: '\u001B[0m'
+    },
+
     /**
-     * Replaces the current line with the given text.
-     * @param text The text to replace the current line with.
+     * Wraps the given text with the specified color code.
+     * @param text Text to colorize.
+     * @param colorCode Color code to use.
      */
-    static replaceLine(text) {
-        return `\x1b[A\x1b[2K${text}`;
-    }
+    colorize(text, colorCode) {
+        return `${colorCode}${text}${this.colors.reset}`;
+    },
 
     /**
      * Renders the given text as error text.
      * @param error Error text to render.
      */
-    static error(error) {
-        if (typeof error === 'string') {
-            return `\x1b[31;1m${error}\x1b[0m`;
-        } else {
-            return `\x1b[31;1m${error.message}\x1b[0m`;
-        }
-    }
+    error(error) {
+        const message = typeof error === 'string' ? error : error.message;
+        return this.colorize(message, this.colors.red);
+    },
 
     /**
      * Renders the given text with a highlight to call attention.
      * @param message Text to highlight.
      */
-    static highlight(message) {
-        return `\x1b[34;1m${message}\x1b[0m`;
-    }
+    highlight(message) {
+        return this.colorize(message, this.colors.blue);
+    },
 
     /**
      * Renders the given text as general output text.
@@ -38,46 +46,54 @@ class Colorize {
      * @param quote Optional. Quote to use for strings. Defaults to `''`.
      * @param units Optional. Units to use for numbers. Defaults to `''`.
      */
-    static output(output, quote = '', units = '') {
+    output(output, quote = '', units = '') {
         if (typeof output === 'string') {
-            return `\x1b[32m${quote}${output}${quote}\x1b[0m`;
+            return this.colorize(`${quote}${output}${quote}`, this.colors.green);
         } else if (typeof output === 'object' && output !== null) {
             return colorizer(output, {
-                pretty: true,
                 colors: {
+                    BOOLEAN_LITERAL: 'blue',
                     BRACE: 'white',
                     BRACKET: 'white',
                     COLON: 'white',
                     COMMA: 'white',
-                    STRING_KEY: 'white',
-                    STRING_LITERAL: 'green',
+                    NULL_LITERAL: 'blue',
                     NUMBER_LITERAL: 'blue',
-                    BOOLEAN_LITERAL: 'blue',
-                    NULL_LITERAL: 'blue'
-                }
+                    STRING_KEY: 'white',
+                    STRING_LITERAL: 'green'
+                },
+                pretty: true
             });
         } else if (typeof output === 'number') {
-            return `\x1b[34m${output}${units}\x1b[0m`;
+            return this.colorize(`${output}${units}`, this.colors.blue);
         } else {
-            return `\x1b[34m${output}\x1b[0m`;
+            return this.colorize(output, this.colors.blue);
         }
-    }
+    },
 
     /**
      * Renders the given text as progress text.
      * @param message Progress text to render.
      */
-    static progress(message) {
-        return `\x1b[90m${message}\x1b[0m`;
-    }
+    progress(message) {
+        return this.colorize(message, this.colors.gray);
+    },
+
+    /**
+     * Replaces the current line with the given text.
+     * @param text The text to replace the current line with.
+     */
+    replaceLine(text) {
+        return `\u001B[A\u001B[2K${text}`;
+    },
 
     /**
      * Renders the given text as a title.
      * @param title Title text to render.
      */
-    static title(title) {
-        return `\x1b[35;1m${title}\x1b[0m`;
-    }
+    title(title) {
+        return this.colorize(title, this.colors.magenta);
+    },
 
     /**
      * Renders the given text as a value.
@@ -85,16 +101,17 @@ class Colorize {
      * @param value Value to render.
      * @param units Optional. Units to use for numbers. Defaults to `''`.
      */
-    static value(field, value, units = '') {
-        return `${field}: ${Colorize.output(value, '"', units)}`;
-    }
+    value(field, value, units = '') {
+        return `${field}: ${this.output(value, '"', units)}`;
+    },
 
     /**
      * Renders the given text as a warning.
      * @param warning Warning text to render.
      */
-    static warning(warning) {
-        return `\x1b[33m${warning}\x1b[0m`;
-    }
-}
+    warning(warning) {
+        return this.colorize(warning, this.colors.yellow);
+    },
+};
+
 export default Colorize;

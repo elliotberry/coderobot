@@ -1,36 +1,37 @@
 
-import * as fs from "fs/promises";
-import * as path from "path";
+import fs from "node:fs/promises";
+import path from "node:path";
+
 import Colorize from "./colorize.js";
 
 /**
  * Schema for a function that creates a file at the specified path.
  */
 const createFileFunction = {
-    name: "createFile",
     description: "Creates a new file at the specified path. Only use for new files not existing ones.",
+    name: "createFile",
     parameters: {
-        type: "object",
         properties: {
-            filePath: {
-                type: "string",
-                description: "The path to the file to create"
-            },
             contents: {
-                type: "string",
-                description: "The contents to write to the new file"
+                description: "The contents to write to the new file",
+                type: "string"
+            },
+            filePath: {
+                description: "The path to the file to create",
+                type: "string"
             }
         },
-        required: ["filePath", "contents"]
+        required: ["filePath", "contents"],
+        type: "object"
     }
 };
 
 /**
- * Adds the createFile function to the codepilot instance.
+ * Adds the createFile function to the Coderobot instance.
  */
-export function addCreateFile(codepilot) {
-    codepilot.addFunction(createFileFunction, async (args) => {
-        const { filePath, contents } = args;
+export function addCreateFile(Coderobot) {
+    Coderobot.addFunction(createFileFunction, async (arguments_) => {
+        const { contents, filePath } = arguments_;
 
         // Check if the file already exists
         if (await fs.access(path.join(process.cwd(), filePath)).then(() => true).catch(() => false)) {
@@ -46,7 +47,7 @@ export function addCreateFile(codepilot) {
             await fs.writeFile(path.join(process.cwd(), filePath), contents);
 
             // Add the file to the code index
-            await codepilot.index.upsertDocument(filePath);
+            await Coderobot.index.upsertDocument(filePath);
             console.log(Colorize.highlight(`Created a new file: ${filePath}`));
             return `Successfully created file at ${filePath}`;
         } catch (error) {
@@ -56,7 +57,7 @@ export function addCreateFile(codepilot) {
 }
 
 
-export function registerFunctions(codepilot) {
-    // Add the createFile function to the codepilot instance
-    addCreateFile(codepilot);
+export function registerFunctions(Coderobot) {
+    // Add the createFile function to the Coderobot instance
+    addCreateFile(Coderobot);
 }

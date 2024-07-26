@@ -1,23 +1,16 @@
 {
-    "name": "@stevenic/codepilot",
-    "author": "Steven Ickman",
-    "description": "Codepilot is an AI powered programming buddy that's an expert on your codebase.",
-    "version": "0.5.0",
+    "name": "coderobot",
+    "author": "Steven Ickman + elliot",
+    "description": "Codepilot is a buddy, pal, and guy.",
+    "version": "0.2.0",
     "license": "MIT",
     "type": "module",
     "keywords": [
         "gpt",
         "coding"
     ],
-    "bugs": {
-        "url": "https://github.com/Stevenic/codepilot/issues"
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/Stevenic/codepilot.git"
-    },
-    "main": "./lib/index.js",
-    "types": "./lib/index.d.ts",
+   
+  
     "bin": {
         "codepilot": "./src/codepilot-cli.js"
     },
@@ -43,11 +36,9 @@
         "eslint-plugin-simple-import-sort": "^12.1.0",
         "eslint-plugin-sonarjs": "^1.0.3",
         "eslint-plugin-unicorn": "^53.0.0",
-        "mocha": "10.2.0",
-        "nyc": "^15.1.0",
-        "prettier": "^3.2.5",
-        "release-it": "^17.3.0",
-        "shx": "^0.3.2"
+       
+        "release-it": "^17.3.0"
+        
     },
     "prettier": {
         "arrowParens": "always",
@@ -69,19 +60,6 @@
         "tabWidth": 2,
         "useTabs": false,
         "embeddedLanguageFormatting": "auto"
-    },
-    "scripts": {
-        "build-docs": "typedoc --theme markdown --entryPoint codepilot --excludePrivate --includeDeclarations --ignoreCompilerErrors --module amd --out ..\\..\\doc\\botbuilder-ai .\\lib\\index.d.ts --hideGenerator --name \"Bot Builder SDK - AI\" --readme none",
-        "build:rollup": "yarn clean && yarn build && api-extractor run --verbose --local",
-        "clean": "rimraf _ts3.4 lib tsconfig.tsbuildinfo node_modules",
-        "lint": "eslint **/src/**/*.{j,t}s{,x} --fix --no-error-on-unmatched-pattern",
-        "test": "npm-run-all build test:mocha",
-        "test:mocha": "nyc mocha tests",
-        "test:compat": "api-extractor run --verbose"
-    },
-    "files": [
-        "_ts3.4",
-        "lib",
-        "src"
-    ]
+    }
+   
 }

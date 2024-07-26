@@ -1,20 +1,20 @@
-import { OpenAIModel, AlphaWave } from "alphawave"
-import {
-  Prompt,
-  ConversationHistory,
-  UserMessage,
-  SystemMessage
-} from "promptrix"
-import Colorize from "./colorize.js"
+import { AlphaWave,OpenAIModel } from "alphawave"
 import * as readline from "node:readline"
+import {
+  ConversationHistory,
+  Prompt,
+  SystemMessage,
+  UserMessage} from "promptrix"
+
+import Colorize from "./colorize.js"
 import { SourceCodeSection } from "./source-code-section.js"
 
 /**
- * The main class for the Codepilot application.
+ * The main class for the Coderobot application.
  */
-export class Codepilot {
+class Coderobot {
   /**
-   * Creates a new `Codepilot` instance.
+   * Creates a new `Coderobot` instance.
    * @param index The code index to use.
    */
   constructor(index) {
@@ -22,21 +22,15 @@ export class Codepilot {
     this._index = index
   }
   /**
-   * Gets the code index.
-   */
-  get index() {
-    return this._index
-  }
-  /**
    * Registers a new function to be used in the chat completion.
    * @remarks
-   * This is used to add new capabilities to Codepilot's chat feature
+   * This is used to add new capabilities to Coderobot's chat feature
    * @param name The name of the function.
    * @param schema The schema of the function.
    * @param fn The function to be executed.
    */
-  addFunction(schema, fn) {
-    this._functions.set(schema.name, { schema, fn })
+  addFunction(schema, function_) {
+    this._functions.set(schema.name, { fn: function_, schema })
     return this
   }
   /**
@@ -71,17 +65,17 @@ export class Codepilot {
         // Route users message to wave
         const result = await wave.completePrompt(input)
         switch (result.status) {
-          case "success":
+          case "success": {
             const message = result.message
             if (message.function_call) {
               // Call function and add result to history
               const entry = _that._functions.get(message.function_call.name)
               if (entry) {
-                const args =
+                const arguments_ =
                   message.function_call.arguments ?
                     JSON.parse(message.function_call.arguments)
                   : {}
-                const result = await entry.fn(args)
+                const result = await entry.fn(arguments_)
                 wave.addFunctionResultToHistory(
                   message.function_call.name,
                   result
@@ -100,19 +94,17 @@ export class Codepilot {
               await respond(Colorize.output(message.content))
             }
             break
-          default:
-            if (result.message) {
-              await respond(
+          }
+          default: {
+            await (result.message ? respond(
                 Colorize.error(`${result.status}: ${result.message}`)
-              )
-            } else {
-              await respond(
+              ) : respond(
                 Colorize.error(
                   `A result status of '${result.status}' was returned.`
                 )
-              )
-            }
+              ));
             break
+          }
         }
       }
       // Show the bots message
@@ -143,10 +135,10 @@ export class Codepilot {
     const modelOptions = {
       apiKey: this._index.keys.apiKey,
       completion_type: "chat",
-      model: this._index.config.model,
-      temperature: this._index.config.temperature,
       max_input_tokens: this._index.config.max_input_tokens,
-      max_tokens: this._index.config.max_tokens
+      max_tokens: this._index.config.max_tokens,
+      model: this._index.config.model,
+      temperature: this._index.config.temperature
       //logRequests: true
     }
     if (functions.length > 0) {
@@ -154,4 +146,11 @@ export class Codepilot {
     }
     return new OpenAIModel(modelOptions)
   }
+  /**
+   * Gets the code index.
+   */
+  get index() {
+    return this._index
+  }
 }
+export default Coderobot

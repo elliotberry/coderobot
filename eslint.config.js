@@ -1,4 +1,3 @@
-import js from '@eslint/js'
 import noSecrets from 'eslint-plugin-no-secrets'
 import perfectionistNatural from 'eslint-plugin-perfectionist/configs/recommended-natural'
 import pluginSecurity from 'eslint-plugin-security'
@@ -8,7 +7,6 @@ import eslintPluginUnicorn from 'eslint-plugin-unicorn'
 export default [
     eslintPluginUnicorn.configs['flat/recommended'],
     perfectionistNatural,
-    js.configs.recommended,
     pluginSecurity.configs.recommended,
     sonarjs.configs.recommended,
     {

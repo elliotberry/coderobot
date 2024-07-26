@@ -1,6 +1,6 @@
 import { isJunk } from "junk"
 import path from "node:path"
-const IGNORED_FILES = [
+const IGNORED_FILES = new Set([
   ".gif",
   ".jpg",
   ".jpeg",
@@ -39,36 +39,39 @@ const IGNORED_FILES = [
   ".exe",
   ".apk",
   ".torrent"
-]
+])
 //lazy af
 const partialStringsToIgnore = [
   ".git",
   "node_modules",
   "bower_components",
   "vendor",
+  ".Coderobot",
+  ".coderobot",
+  ".Codepilot",
   ".codepilot"
 ]
 
-const ignores = function (filename, docType) {
-  let returnedVal = false
+const ignores = function (filename, documentType) {
+  let returnedValue = false
   for (const partialString of partialStringsToIgnore) {
-    if (filename.indexOf(partialString) !== -1) {
-      returnedVal = true
+    if (filename.includes(partialString)) {
+      returnedValue = true
       break
     }
   }
 
-  if (filename.indexOf("node_modules") !== -1) {
-    returnedVal = true
+  if (filename.includes("node_modules")) {
+    returnedValue = true
   }
   // Ignore binary files
-  if (IGNORED_FILES.includes(path.extname(filename))) {
-    returnedVal = true
+  if (IGNORED_FILES.has(path.extname(filename))) {
+    returnedValue = true
   }
   if (isJunk(filename)) {
-    return true
+    returnedValue = true
   }
-  return returnedVal
+  return returnedValue
 }
 
 export default ignores

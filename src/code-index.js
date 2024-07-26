@@ -1,8 +1,12 @@
-import { LocalDocumentIndex, FileFetcher, OpenAIEmbeddings } from "vectra"
-import * as fs from "fs/promises"
-import * as path from "path"
+import fs from "node:fs/promises"
+import path from "node:path"
+import { FileFetcher, LocalDocumentIndex, OpenAIEmbeddings } from "vectra"
+
 import Colorize from "./colorize.js"
 import ignore from "./ignore.js"
+
+
+const noIndexError = "Index has not been created yet. Please run `Coderobot create` first."
 
 // LLM-REGION
 /**
@@ -11,30 +15,13 @@ import ignore from "./ignore.js"
 export class CodeIndex {
   /**
    * Creates a new 'CodeIndex' instance.
-   * @param folderPath Optional. The path to the folder containing the index. Defaults to '.codepilot'.
+   * @param folderPath Optional. The path to the folder containing the index. Defaults to '.Coderobot'.
    */
-  constructor(folderPath = ".codepilot") {
+  constructor(folderPath = ".Coderobot") {
     this._folderPath = folderPath
+    this._configFile = path.join(this.folderPath, "config.json")
+    this._vectraKeys = path.join(this.folderPath, "vectra.keys")
   }
-  /**
-   * Gets the current code index configuration.
-   */
-  get config() {
-    return this._config
-  }
-  /**
-   * Gets the path to the folder containing the index.
-   */
-  get folderPath() {
-    return this._folderPath
-  }
-  /**
-   * Gets the current OpenAI keys.
-   */
-  get keys() {
-    return this._keys
-  }
-  // LLM-REGION
   /**
    * Adds sources and extensions to the index.
    * @param config The configuration containing the sources and extensions to add.
@@ -42,40 +29,39 @@ export class CodeIndex {
   async add(config) {
     if (!(await this.isCreated())) {
       throw new Error(
-        "Index has not been created yet. Please run `codepilot create` first."
+        noIndexError
       )
     }
     // Ensure config loaded
-    const configPath = path.join(this.folderPath, "config.json")
+    const configPath = this._configFile
     if (!this._config) {
-      this._config = JSON.parse(await fs.readFile(configPath, "utf-8"))
+      this._config = JSON.parse(await fs.readFile(configPath, "utf8"))
     }
     // Clone config
     const newConfig = Object.assign({}, this._config)
     // Add sources
     if (Array.isArray(config.sources)) {
-      config.sources.forEach((source) => {
+      for (const source of config.sources) {
         if (!newConfig.sources.includes(source)) {
           newConfig.sources.push(source)
         }
-      })
+      }
     }
     // Add extensions
     if (Array.isArray(config.extensions)) {
       if (!newConfig.extensions) {
         newConfig.extensions = []
       }
-      config.extensions.forEach((extension) => {
+      for (const extension of config.extensions) {
         if (!newConfig.extensions.includes(extension)) {
           newConfig.extensions.push(extension)
         }
-      })
+      }
     }
     // Write config
     await fs.writeFile(configPath, JSON.stringify(newConfig))
     this._config = newConfig
   }
-  // LLM-REGION
   /**
    * Creates a new code index.
    * @param keys OpenAI keys to use.
@@ -96,12 +82,12 @@ export class CodeIndex {
     try {
       // Create config file
       await fs.writeFile(
-        path.join(this.folderPath, "config.json"),
+        this._configFile,
         JSON.stringify(config)
       )
       // Create keys file
       await fs.writeFile(
-        path.join(this.folderPath, "vectra.keys"),
+        this._vectraKeys,
         JSON.stringify(keys)
       )
       // Create .gitignore file
@@ -114,14 +100,13 @@ export class CodeIndex {
       // Create index
       const index = await this.load()
       await index.createIndex()
-    } catch (err) {
+    } catch (error) {
       this._config = undefined
       this._keys = undefined
       await fs.rm(this.folderPath, { recursive: true })
-      throw new Error(`Error creating index: ${err.toString()}`)
+      throw new Error(`Error creating index: ${error.toString()}`)
     }
   }
-  // LLM-REGION
   /**
    * Deletes the current code index.
    */
@@ -141,6 +126,7 @@ export class CodeIndex {
       .then(() => true)
       .catch(() => false)
   }
+  // LLM-REGION
   /**
    * Returns true if the index has been created.
    */
@@ -156,12 +142,12 @@ export class CodeIndex {
    */
   async load() {
     if (!this._config) {
-      const configPath = path.join(this.folderPath, "config.json")
-      this._config = JSON.parse(await fs.readFile(configPath, "utf-8"))
+      const configPath = this._configFile
+      this._config = JSON.parse(await fs.readFile(configPath, "utf8"))
     }
     if (!this._keys) {
-      const keysPath = path.join(this.folderPath, "vectra.keys")
-      this._keys = JSON.parse(await fs.readFile(keysPath, "utf-8"))
+      const keysPath = this._vectraKeys
+      this._keys = JSON.parse(await fs.readFile(keysPath, "utf8"))
     }
     if (!this._index) {
       const folderPath = path.join(this.folderPath, "index")
@@ -169,8 +155,8 @@ export class CodeIndex {
         Object.assign({ model: "text-embedding-ada-002" }, this._keys)
       )
       this._index = new LocalDocumentIndex({
-        folderPath,
-        embeddings
+        embeddings,
+        folderPath
       })
     }
     return this._index
@@ -185,31 +171,30 @@ export class CodeIndex {
   async query(query, options) {
     if (!(await this.isCreated())) {
       throw new Error(
-        "Index has not been created yet. Please run `codepilot create` first."
+        noIndexError
       )
     }
     if (!(await this.hasKeys())) {
       throw new Error(
-        "A local vectra.keys file couldn't be found. Please run `codepilot set --key <your OpenAI key>`."
+        "A local vectra.keys file couldn't be found. Please run `Coderobot set --key <your OpenAI key>`."
       )
     }
     // Query document index
     const index = await this.load()
     return await index.queryDocuments(query, options)
   }
-  // LLM-REGION
   /**
    * Rebuilds the code index.
    */
   async rebuild() {
     if (!(await this.isCreated())) {
       throw new Error(
-        "Index has not been created yet. Please run `codepilot create` first."
+        noIndexError
       )
     }
     if (!(await this.hasKeys())) {
       throw new Error(
-        "A local vectra.keys file couldn't be found. Please run `codepilot set --key <your OpenAI key>`."
+        "A local vectra.keys file couldn't be found. Please run `Coderobot set --key <your OpenAI key>`."
       )
     }
     // Create fresh index
@@ -222,9 +207,9 @@ export class CodeIndex {
     const fetcher = new FileFetcher()
     console.log(this._config.sources);
     for (const source of this._config.sources) {
-      await fetcher.fetch(source, async (uri, text, docType) => {
+      await fetcher.fetch(source, async (uri, text, documentType) => {
         // Ignore binary files
-       let shouldIgnore = ignore(uri, docType)
+       let shouldIgnore = ignore(uri, documentType)
         if (shouldIgnore) {
           return true
         }
@@ -234,7 +219,7 @@ export class CodeIndex {
         
         // Upsert document
         console.log(Colorize.progress(`adding: ${uri}`))
-        await index.upsertDocument(uri, text, docType)
+        await index.upsertDocument(uri, text, documentType)
         return true 
       }
       })
@@ -249,13 +234,13 @@ export class CodeIndex {
     var _a
     if (!(await this.isCreated())) {
       throw new Error(
-        "Index has not been created yet. Please run `codepilot create` first."
+        noIndexError
       )
     }
     // Ensure config loaded
-    const configPath = path.join(this.folderPath, "config.json")
+    const configPath = this._configFile
     if (!this._config) {
-      this._config = JSON.parse(await fs.readFile(configPath, "utf-8"))
+      this._config = JSON.parse(await fs.readFile(configPath, "utf8"))
     }
     // Clone config
     const newConfig = Object.assign({}, this._config)
@@ -278,36 +263,19 @@ export class CodeIndex {
   }
   // LLM-REGION
   /**
-   * Updates the OpenAI keys for the index.
-   * @param keys Keys to use.
-   */
-  async setKeys(keys) {
-    if (!(await this.isCreated())) {
-      throw new Error(
-        "Index has not been created yet. Please run `codepilot create` first."
-      )
-    }
-    // Overwrite keys file
-    await fs.writeFile(
-      path.join(this.folderPath, "vectra.keys"),
-      JSON.stringify(keys)
-    )
-    this._keys = keys
-  }
-  /**
    * Updates the code index configuration.
    * @param config Settings to update.
    */
   async setConfig(config) {
     if (!(await this.isCreated())) {
       throw new Error(
-        "Index has not been created yet. Please run `codepilot create` first."
+        noIndexError
       )
     }
     // Ensure config loaded
-    const configPath = path.join(this.folderPath, "config.json")
+    const configPath = this._configFile
     if (!this._config) {
-      this._config = JSON.parse(await fs.readFile(configPath, "utf-8"))
+      this._config = JSON.parse(await fs.readFile(configPath, "utf8"))
     }
     // Clone config
     const newConfig = Object.assign({}, this._config)
@@ -330,28 +298,66 @@ export class CodeIndex {
   }
   // LLM-REGION
   /**
+   * Updates the OpenAI keys for the index.
+   * @param keys Keys to use.
+   */
+  async setKeys(keys) {
+    if (!(await this.isCreated())) {
+      throw new Error(
+        noIndexError
+      )
+    }
+    // Overwrite keys file
+    await fs.writeFile(
+      this._vectraKeys,
+      JSON.stringify(keys)
+    )
+    this._keys = keys
+  }
+  // LLM-REGION
+  /**
    * Adds a document to the index.
    * @param path Path to the document to add.
    */
   async upsertDocument(path) {
     if (!(await this.isCreated())) {
       throw new Error(
-        "Index has not been created yet. Please run `codepilot create` first."
+        "Index has not been created yet. Please run `Coderobot create` first."
       )
     }
     if (!(await this.hasKeys())) {
       throw new Error(
-        "A local vectra.keys file couldn't be found. Please run `codepilot set --key <your OpenAI key>`."
+        "A local vectra.keys file couldn't be found. Please run `Coderobot set --key <your OpenAI key>`."
       )
     }
     // Ensure index is loaded
     const index = await this.load()
     // Fetch document
     const fetcher = new FileFetcher()
-    await fetcher.fetch(path, async (uri, text, docType) => {
+    await fetcher.fetch(path, async (uri, text, documentType) => {
       // Upsert document
-      await index.upsertDocument(uri, text, docType)
+      await index.upsertDocument(uri, text, documentType)
       return true
     })
+  }
+  // LLM-REGION
+  /**
+   * Gets the current code index configuration.
+   */
+  get config() {
+    return this._config
+  }
+  /**
+   * Gets the path to the folder containing the index.
+   */
+  get folderPath() {
+    return this._folderPath
+  }
+  // LLM-REGION
+  /**
+   * Gets the current OpenAI keys.
+   */
+  get keys() {
+    return this._keys
   }
 }
