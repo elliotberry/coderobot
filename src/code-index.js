@@ -6,7 +6,7 @@ import Colorize from "./colorize.js"
 import ignore from "./ignore.js"
 
 
-const noIndexError = "Index has not been created yet. Please run `Coderobot create` first."
+const noIndexError = "Index has not been created yet. Please run `coderobot create` first."
 
 // LLM-REGION
 /**
@@ -15,9 +15,9 @@ const noIndexError = "Index has not been created yet. Please run `Coderobot crea
 export class CodeIndex {
   /**
    * Creates a new 'CodeIndex' instance.
-   * @param folderPath Optional. The path to the folder containing the index. Defaults to '.Coderobot'.
+   * @param folderPath Optional. The path to the folder containing the index. Defaults to '.coderobot'.
    */
-  constructor(folderPath = ".Coderobot") {
+  constructor(folderPath = ".coderobot") {
     this._folderPath = folderPath
     this._configFile = path.join(this.folderPath, "config.json")
     this._vectraKeys = path.join(this.folderPath, "vectra.keys")
@@ -176,7 +176,7 @@ export class CodeIndex {
     }
     if (!(await this.hasKeys())) {
       throw new Error(
-        "A local vectra.keys file couldn't be found. Please run `Coderobot set --key <your OpenAI key>`."
+        "A local vectra.keys file couldn't be found. Please run `coderobot set --key <your OpenAI key>`."
       )
     }
     // Query document index
@@ -194,7 +194,7 @@ export class CodeIndex {
     }
     if (!(await this.hasKeys())) {
       throw new Error(
-        "A local vectra.keys file couldn't be found. Please run `Coderobot set --key <your OpenAI key>`."
+        "A local vectra.keys file couldn't be found. Please run `coderobot set --key <your OpenAI key>`."
       )
     }
     // Create fresh index
@@ -322,12 +322,12 @@ export class CodeIndex {
   async upsertDocument(path) {
     if (!(await this.isCreated())) {
       throw new Error(
-        "Index has not been created yet. Please run `Coderobot create` first."
+        "Index has not been created yet. Please run `coderobot create` first."
       )
     }
     if (!(await this.hasKeys())) {
       throw new Error(
-        "A local vectra.keys file couldn't be found. Please run `Coderobot set --key <your OpenAI key>`."
+        "A local vectra.keys file couldn't be found. Please run `coderobot set --key <your OpenAI key>`."
       )
     }
     // Ensure index is loaded

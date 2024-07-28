@@ -5,27 +5,27 @@ import { CodeIndex } from "./code-index.js"
 import Coderobot from "./coderobot.js"
 import { registerFunctions } from "./create-file.js"
 /**
- * Defines the commands supported by the Coderobot CLI.
+ * Defines the commands supported by the coderobot CLI.
  */
 export async function run() {
   // prettier-ignore
   const args = await yargs(hideBin(process.argv))
-        .scriptName('Coderobot')
+        .scriptName('coderobot')
         .command('$0', 'chat mode', {}, async () => {
         // Ensure index exists and has keys
         const index = new CodeIndex();
         if (!await index.isCreated()) {
             console.log(Colorize.output([
-                `We need to first create an index before you can chat with Coderobot.`,
+                `We need to first create an index before you can chat with coderobot.`,
                 `You'll need to provide an OpenAI API key and a source folder to index.`,
                 `You can create an OpenAI API key at https://platform.openai.com/account/api-keys.`,
                 `A paid account is recommended but OpenAI will give you $5 in free credits to get started.`,
                 `Once you have your OpenAI API key, you can create a new index by running:\n`,
-                `Coderobot create --key <api key> --source <source folder> [--source <additional source folder>]\n`,
+                `coderobot create --key <api key> --source <source folder> [--source <additional source folder>]\n`,
                 `By default, all files under your source folders will be included in the index.`,
                 `If you'd only like certain file extensions to be indexed, you can add the "--extension <included extensions> [--extension <additional extension>]" option.`,
-                `Once the index has finished building, you can start chatting with Coderobot by running:\n`,
-                `Coderobot\n`,
+                `Once the index has finished building, you can start chatting with coderobot by running:\n`,
+                `coderobot\n`,
             ].join(`\n`)));
             return;
         }

@@ -42,6 +42,15 @@ const IGNORED_FILES = new Set([
 ])
 //lazy af
 const partialStringsToIgnore = [
+  ".DS_Store",
+  ".gitignore",
+  ".gitattributes",
+  ".gitmodules",
+  ".gitkeep",
+  ".npmignore",
+  ".dockerignore",
+  ".eslintignore",
+  ".prettierignore",
   ".git",
   "node_modules",
   "bower_components",

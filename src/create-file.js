@@ -27,10 +27,10 @@ const createFileFunction = {
 };
 
 /**
- * Adds the createFile function to the Coderobot instance.
+ * Adds the createFile function to the coderobot instance.
  */
-export function addCreateFile(Coderobot) {
-    Coderobot.addFunction(createFileFunction, async (arguments_) => {
+export function addCreateFile(coderobot) {
+    coderobot.addFunction(createFileFunction, async (arguments_) => {
         const { contents, filePath } = arguments_;
 
         // Check if the file already exists
@@ -47,7 +47,7 @@ export function addCreateFile(Coderobot) {
             await fs.writeFile(path.join(process.cwd(), filePath), contents);
 
             // Add the file to the code index
-            await Coderobot.index.upsertDocument(filePath);
+            await coderobot.index.upsertDocument(filePath);
             console.log(Colorize.highlight(`Created a new file: ${filePath}`));
             return `Successfully created file at ${filePath}`;
         } catch (error) {
@@ -57,7 +57,7 @@ export function addCreateFile(Coderobot) {
 }
 
 
-export function registerFunctions(Coderobot) {
-    // Add the createFile function to the Coderobot instance
-    addCreateFile(Coderobot);
+export function registerFunctions(coderobot) {
+    // Add the createFile function to the coderobot instance
+    addCreateFile(coderobot);
 }
