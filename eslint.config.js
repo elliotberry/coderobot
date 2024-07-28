@@ -29,6 +29,7 @@ export default [
         },
 
         rules: {
+            
             'no-console': 'off',
             'no-secrets/no-secrets': 'error',
             'no-unused-vars': 'warn',
@@ -54,6 +55,7 @@ export default [
             'unicorn/prefer-switch': 'off',
             'unicorn/prefer-top-level-await': 'off',
             'unicorn/prevent-abbreviations': 'warn',
+            "security/detect-non-literal-fs-filename": "off"
         },
     },
 ]

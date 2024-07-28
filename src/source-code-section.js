@@ -14,16 +14,25 @@ export class SourceCodeSection extends PromptSectionBase {
     super(tokens, true, "\n", userPrefix)
     this._index = index
   }
+  getSectionOptions(maxTokens) {
+    if (maxTokens < 2000) {
+      return { sections: 1, tokens: maxTokens }
+    } else if (maxTokens <= 6000) {
+      return { sections: 1, tokens: 2000 }
+    } else {
+      return { sections: 2, tokens: 2000 }
+    }
+  }
   async renderAsMessages(memory, functions, tokenizer, maxTokens) {
     // Query the code index
     const query = memory.get("input")
     const results = await this._index.query(query, {
-      maxDocuments: 100,
-      maxChunks: 2000
+      maxChunks: 2000,
+      maxDocuments: 100
     })
     // Render code & text snippets
     let text = `Here are some snippets of code and text that might help:`
-    let tokens = tokenizer.encode(text).length
+    const tokens = tokenizer.encode(text).length
     let remaining = maxTokens - tokens
     for (const result of results) {
       // Create title
@@ -50,18 +59,9 @@ export class SourceCodeSection extends PromptSectionBase {
     }
     // Return as a user message
     return {
-      output: [{ role: "user", content: text }],
       length: maxTokens - remaining,
+      output: [{ content: text, role: "user" }],
       tooLong: remaining < 0
-    }
-  }
-  getSectionOptions(maxTokens) {
-    if (maxTokens < 2000) {
-      return { sections: 1, tokens: maxTokens }
-    } else if (maxTokens <= 6000) {
-      return { sections: 1, tokens: 2000 }
-    } else {
-      return { sections: 2, tokens: 2000 }
     }
   }
 }

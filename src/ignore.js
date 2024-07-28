@@ -1,5 +1,7 @@
 import { isJunk } from "junk"
 import path from "node:path"
+
+import Colorize from "./colorize.js"
 const IGNORED_FILES = new Set([
   ".gif",
   ".jpg",
@@ -42,6 +44,21 @@ const IGNORED_FILES = new Set([
 ])
 //lazy af
 const partialStringsToIgnore = [
+  "logs",
+  "*.log",
+  "npm-debug.log*",
+  "yarn-debug.log*",
+  "yarn-error.log*",
+  "lerna-debug.log*",
+  ".pnpm-debug.log*",
+  "pids",
+  "*.pid",
+  "*.seed",
+  "*.pid.lock",
+  "jspm_packages/",
+  ".npm",
+  "package-lock.json",
+  "yarn.lock",
   ".DS_Store",
   ".gitignore",
   ".gitattributes",
@@ -79,6 +96,9 @@ const ignores = function (filename, documentType) {
   }
   if (isJunk(filename)) {
     returnedValue = true
+  }
+  if (returnedValue) {
+    console.log(Colorize.warn(`ignoring: ${filename}`))
   }
   return returnedValue
 }

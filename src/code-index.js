@@ -1,8 +1,9 @@
-import fs from "node:fs/promises"
+import {mkdir,readFile, rm, writeFile} from "node:fs/promises"
 import path from "node:path"
 import { FileFetcher, LocalDocumentIndex, OpenAIEmbeddings } from "vectra"
 
 import Colorize from "./colorize.js"
+import { vectraKeysError } from "./dumb-errors.js"
 import ignore from "./ignore.js"
 
 
@@ -35,7 +36,7 @@ export class CodeIndex {
     // Ensure config loaded
     const configPath = this._configFile
     if (!this._config) {
-      this._config = JSON.parse(await fs.readFile(configPath, "utf8"))
+      this._config = JSON.parse(await readFile(configPath, "utf8"))
     }
     // Clone config
     const newConfig = Object.assign({}, this._config)
@@ -59,7 +60,7 @@ export class CodeIndex {
       }
     }
     // Write config
-    await fs.writeFile(configPath, JSON.stringify(newConfig))
+    await writeFile(configPath, JSON.stringify(newConfig))
     this._config = newConfig
   }
   /**
@@ -75,25 +76,24 @@ export class CodeIndex {
         .then(() => true)
         .catch(() => false)
     ) {
-      await fs.rm(this.folderPath, { recursive: true })
+      await rm(this.folderPath, { recursive: true })
     }
     // Create folder
-    await fs.mkdir(this.folderPath)
+    await mkdir(this.folderPath)
     try {
       // Create config file
-      await fs.writeFile(
+      await writeFile(
         this._configFile,
         JSON.stringify(config)
       )
       // Create keys file
-      await fs.writeFile(
+      await writeFile(
         this._vectraKeys,
         JSON.stringify(keys)
       )
       // Create .gitignore file
-      await fs.writeFile(
-        path.join(this.folderPath, ".gitignore"),
-        "vectra.keys"
+      await writeFile(
+        this._vectraKeys
       )
       this._config = config
       this._keys = keys
@@ -103,7 +103,7 @@ export class CodeIndex {
     } catch (error) {
       this._config = undefined
       this._keys = undefined
-      await fs.rm(this.folderPath, { recursive: true })
+      await rm(this.folderPath, { recursive: true })
       throw new Error(`Error creating index: ${error.toString()}`)
     }
   }
@@ -111,7 +111,7 @@ export class CodeIndex {
    * Deletes the current code index.
    */
   async delete() {
-    await fs.rm(this.folderPath, { recursive: true })
+    await rm(this.folderPath, { recursive: true })
     this._config = undefined
     this._keys = undefined
     this._index = undefined
@@ -143,11 +143,11 @@ export class CodeIndex {
   async load() {
     if (!this._config) {
       const configPath = this._configFile
-      this._config = JSON.parse(await fs.readFile(configPath, "utf8"))
+      this._config = JSON.parse(await readFile(configPath, "utf8"))
     }
     if (!this._keys) {
       const keysPath = this._vectraKeys
-      this._keys = JSON.parse(await fs.readFile(keysPath, "utf8"))
+      this._keys = JSON.parse(await readFile(keysPath, "utf8"))
     }
     if (!this._index) {
       const folderPath = path.join(this.folderPath, "index")
@@ -175,9 +175,7 @@ export class CodeIndex {
       )
     }
     if (!(await this.hasKeys())) {
-      throw new Error(
-        "A local vectra.keys file couldn't be found. Please run `coderobot set --key <your OpenAI key>`."
-      )
+      vectraKeysError()
     }
     // Query document index
     const index = await this.load()
@@ -193,9 +191,7 @@ export class CodeIndex {
       )
     }
     if (!(await this.hasKeys())) {
-      throw new Error(
-        "A local vectra.keys file couldn't be found. Please run `coderobot set --key <your OpenAI key>`."
-      )
+      vectraKeysError()
     }
     // Create fresh index
     const index = await this.load()
@@ -240,7 +236,7 @@ export class CodeIndex {
     // Ensure config loaded
     const configPath = this._configFile
     if (!this._config) {
-      this._config = JSON.parse(await fs.readFile(configPath, "utf8"))
+      this._config = JSON.parse(await readFile(configPath, "utf8"))
     }
     // Clone config
     const newConfig = Object.assign({}, this._config)
@@ -258,7 +254,7 @@ export class CodeIndex {
         : _a.filter((extension) => !config.extensions.includes(extension))
     }
     // Write config
-    await fs.writeFile(configPath, JSON.stringify(newConfig))
+    await writeFile(configPath, JSON.stringify(newConfig))
     this._config = newConfig
   }
   // LLM-REGION
@@ -275,7 +271,7 @@ export class CodeIndex {
     // Ensure config loaded
     const configPath = this._configFile
     if (!this._config) {
-      this._config = JSON.parse(await fs.readFile(configPath, "utf8"))
+      this._config = JSON.parse(await readFile(configPath, "utf8"))
     }
     // Clone config
     const newConfig = Object.assign({}, this._config)
@@ -293,7 +289,7 @@ export class CodeIndex {
       newConfig.temperature = config.temperature
     }
     // Write config
-    await fs.writeFile(configPath, JSON.stringify(newConfig))
+    await writeFile(configPath, JSON.stringify(newConfig))
     this._config = newConfig
   }
   // LLM-REGION
@@ -308,7 +304,7 @@ export class CodeIndex {
       )
     }
     // Overwrite keys file
-    await fs.writeFile(
+    await writeFile(
       this._vectraKeys,
       JSON.stringify(keys)
     )
@@ -326,9 +322,7 @@ export class CodeIndex {
       )
     }
     if (!(await this.hasKeys())) {
-      throw new Error(
-        "A local vectra.keys file couldn't be found. Please run `coderobot set --key <your OpenAI key>`."
-      )
+      vectraKeysError()
     }
     // Ensure index is loaded
     const index = await this.load()

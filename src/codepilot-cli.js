@@ -1,15 +1,16 @@
-import yargs from "yargs/yargs"
 import { hideBin } from "yargs/helpers"
-import Colorize from "./colorize.js"
+import yargs from "yargs/yargs"
+
 import { CodeIndex } from "./code-index.js"
 import Coderobot from "./coderobot.js"
+import Colorize from "./colorize.js"
 import { registerFunctions } from "./create-file.js"
 /**
  * Defines the commands supported by the coderobot CLI.
  */
 export async function run() {
   // prettier-ignore
-  const args = await yargs(hideBin(process.argv))
+  const arguments_ = await yargs(hideBin(process.argv))
         .scriptName('coderobot')
         .command('$0', 'chat mode', {}, async () => {
         // Ensure index exists and has keys
@@ -58,9 +59,9 @@ export async function run() {
         })
             .option('model', {
             alias: 'm',
+            default: 'gpt-4o',
             describe: 'OpenAI model to use for queries. Defaults to "gpt-3.5-turbo-16k".',
-            type: 'string',
-            default: 'gpt-4o'
+            type: 'string'
         })
             .option('source', {
             alias: 's',
@@ -75,13 +76,13 @@ export async function run() {
             type: 'string'
         })
             .demandOption(['key', 'source']);
-    }, async (args) => {
+    }, async (arguments_) => {
         console.log(Colorize.title(`Creating new code index`));
         // Get optimal config
-        const config = getOptimalConfig(args.model, args.source, args.extension);
+        const config = getOptimalConfig(arguments_.model, arguments_.source, arguments_.extension);
         // Create index
         const index = new CodeIndex();
-        await index.create({ apiKey: args.key }, config);
+        await index.create({ apiKey: arguments_.key }, config);
         console.log(Colorize.output([
             `I created a new code index under the '${index.folderPath}' folder.`,
             `Building the index can take a while depending on the size of your source folders.\n`,
@@ -99,7 +100,7 @@ export async function run() {
             `Coderobot\n`,
         ].join('\n')));
     })
-        .command('delete', `delete an existing code index`, {}, async (args) => {
+        .command('delete', `delete an existing code index`, {}, async (arguments_) => {
         const index = new CodeIndex();
         await index.delete();
         console.log(Colorize.output(`Your index was deleted.`));
@@ -118,7 +119,7 @@ export async function run() {
             describe: 'extension(s) to filter to.',
             type: 'string'
         });
-    }, async (args) => {
+    }, async (arguments_) => {
         // Ensure index exists and has keys
         const index = new CodeIndex();
         if (!await index.isCreated()) {
@@ -140,8 +141,8 @@ export async function run() {
         // Add sources and/or extensions
         console.log(Colorize.title('Updating sources and/or extensions'));
         await index.add({
-            sources: args.source,
-            extensions: args.extension
+            extensions: arguments_.extension,
+            sources: arguments_.source
         });
         console.log(Colorize.output([
             `Your sources and/or extensions have been updated.`,
@@ -191,7 +192,7 @@ export async function run() {
             describe: 'extension(s) to filter to.',
             type: 'string'
         });
-    }, async (args) => {
+    }, async (arguments_) => {
         // Ensure index exists and has keys
         const index = new CodeIndex();
         if (!await index.isCreated()) {
@@ -213,8 +214,8 @@ export async function run() {
         // Removing sources and/or extensions
         console.log(Colorize.title('Updating sources and/or extensions'));
         await index.remove({
-            sources: args.source,
-            extensions: args.extension
+            extensions: arguments_.extension,
+            sources: arguments_.source
         });
         console.log(Colorize.output([
             `Your sources and/or extensions have been updated.`,
@@ -234,17 +235,18 @@ export async function run() {
             describe: 'OpenAI model to use for queries. Defaults to "gpt-3.5-turbo-16k".',
             type: 'string'
         });
-    }, async (args) => {
+    }, async (arguments_) => {
         const index = new CodeIndex();
-        if (args.key) {
+        if (arguments_.key) {
             console.log(Colorize.output(`Updating OpenAI key`));
-            await index.setKeys({ apiKey: args.key });
+            await index.setKeys({ apiKey: arguments_.key });
         }
-        if (args.model) {
-            console.log(Colorize.output(`Updating model`));
-            const config = getOptimalConfig(args.model, args.source, args.extension);
-            index.setConfig(config);
+        if (!arguments_.model) {
+            return;
         }
+        console.log(Colorize.output(`Updating model`));
+        const config = getOptimalConfig(arguments_.model, arguments_.source, arguments_.extension);
+        index.setConfig(config);
     })
         .help()
         .demandCommand()
@@ -253,13 +255,13 @@ export async function run() {
 
 function getOptimalConfig(model, sources, extensions) {
   const config = {
+    extensions,
     model,
     sources,
-    extensions,
     temperature: 0.2
   }
   if (model.startsWith("gpt-3.5-turbo-16k")) {
-    config.max_input_tokens = 12000
+    config.max_input_tokens = 12_000
     config.max_tokens = 3000
   } else if (model.startsWith("gpt-3.5-turbo-instruct")) {
     throw new Error(`The 'gpt-3.5-turbo-instruct' model is not yet supported.`)
@@ -267,13 +269,13 @@ function getOptimalConfig(model, sources, extensions) {
     config.max_input_tokens = 3000
     config.max_tokens = 800
   } else if (model.startsWith("gpt-4-32k")) {
-    config.max_input_tokens = 24000
+    config.max_input_tokens = 24_000
     config.max_tokens = 6000
   } else if (model.startsWith("gpt-4")) {
     config.max_input_tokens = 6000
     config.max_tokens = 1500
   } else if (model.startsWith("gpt-4o")) {
-    config.max_input_tokens = 12000
+    config.max_input_tokens = 12_000
     config.max_tokens = 4000
   } else {
     throw new Error(`The '${model}' model is not yet supported.`)
