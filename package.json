@@ -9,13 +9,12 @@
         "gpt",
         "coding"
     ],
-   
-  
     "bin": {
         "codepilot": "./src/codepilot-cli.js"
     },
     "dependencies": {
         "alphawave": "0.8.2",
+        "elliotisms": "^0.0.37",
         "json-colorizer": "^2.2.2",
         "junk": "^4.0.1",
         "prettier": "^3.3.3",
@@ -36,9 +35,7 @@
         "eslint-plugin-simple-import-sort": "^12.1.0",
         "eslint-plugin-sonarjs": "^1.0.3",
         "eslint-plugin-unicorn": "^53.0.0",
-       
         "release-it": "^17.3.0"
-        
     },
     "prettier": {
         "arrowParens": "always",
@@ -61,5 +58,4 @@
         "useTabs": false,
         "embeddedLanguageFormatting": "auto"
     }
-   
 }

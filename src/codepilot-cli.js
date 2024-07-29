@@ -67,7 +67,8 @@ export async function run() {
             alias: 's',
             array: true,
             describe: 'source folder(s) to index.',
-            type: 'string'
+            type: 'string',
+            "default": "./"
         })
             .option('extension', {
             alias: 'e',
@@ -76,13 +77,13 @@ export async function run() {
             type: 'string'
         })
             .demandOption(['key', 'source']);
-    }, async (arguments_) => {
+    }, async ({model, key, source, extension}) => {
         console.log(Colorize.title(`Creating new code index`));
         // Get optimal config
-        const config = getOptimalConfig(arguments_.model, arguments_.source, arguments_.extension);
+        const config = getOptimalConfig(model, source, extension);
         // Create index
         const index = new CodeIndex();
-        await index.create({ apiKey: arguments_.key }, config);
+        await index.create({ apiKey: key }, config);
         console.log(Colorize.output([
             `I created a new code index under the '${index.folderPath}' folder.`,
             `Building the index can take a while depending on the size of your source folders.\n`,

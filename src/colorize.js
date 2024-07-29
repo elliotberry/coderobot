@@ -109,7 +109,7 @@ const Colorize = {
      * Renders the given text as a warning.
      * @param warning Warning text to render.
      */
-    warning(warning) {
+    warn(warning) {
         return this.colorize(warning, this.colors.yellow);
     },
 };

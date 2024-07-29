@@ -1,13 +1,13 @@
-import {mkdir,readFile, rm, writeFile} from "node:fs/promises"
+import { mkdir, readFile, rm, writeFile, stat } from "node:fs/promises"
 import path from "node:path"
 import { FileFetcher, LocalDocumentIndex, OpenAIEmbeddings } from "vectra"
-
+import exists from "elliotisms/exists"
 import Colorize from "./colorize.js"
 import { vectraKeysError } from "./dumb-errors.js"
 import ignore from "./ignore.js"
 
-
-const noIndexError = "Index has not been created yet. Please run `coderobot create` first."
+const noIndexError =
+  "Index has not been created yet. Please run `coderobot create` first."
 
 // LLM-REGION
 /**
@@ -18,10 +18,10 @@ export class CodeIndex {
    * Creates a new 'CodeIndex' instance.
    * @param folderPath Optional. The path to the folder containing the index. Defaults to '.coderobot'.
    */
-  constructor(folderPath = ".coderobot") {
+  constructor(folderPath = "./.coderobot") {
     this._folderPath = folderPath
-    this._configFile = path.join(this.folderPath, "config.json")
-    this._vectraKeys = path.join(this.folderPath, "vectra.keys")
+    this._configFile = path.join(this._folderPath, "config.json")
+    this._vectraKeys = path.join(this._folderPath, "vectra.keys")
   }
   /**
    * Adds sources and extensions to the index.
@@ -29,9 +29,7 @@ export class CodeIndex {
    */
   async add(config) {
     if (!(await this.isCreated())) {
-      throw new Error(
-        noIndexError
-      )
+      throw new Error(noIndexError)
     }
     // Ensure config loaded
     const configPath = this._configFile
@@ -68,42 +66,30 @@ export class CodeIndex {
    * @param keys OpenAI keys to use.
    * @param config Source code index configuration.
    */
-  async create(keys, config) {
+  async create(key, config) {
+  
     // Delete folder if it exists
-    if (
-      await fs
-        .stat(this.folderPath)
-        .then(() => true)
-        .catch(() => false)
-    ) {
-      await rm(this.folderPath, { recursive: true })
+    if (await exists(this._folderPath)) {
+      await rm(this._folderPath, { recursive: true })
     }
     // Create folder
-    await mkdir(this.folderPath)
+    await mkdir(this._folderPath)
     try {
       // Create config file
-      await writeFile(
-        this._configFile,
-        JSON.stringify(config)
-      )
+      await writeFile(this._configFile, JSON.stringify(config))
       // Create keys file
-      await writeFile(
-        this._vectraKeys,
-        JSON.stringify(keys)
-      )
+      await writeFile(this._vectraKeys, JSON.stringify(key))
       // Create .gitignore file
-      await writeFile(
-        this._vectraKeys
-      )
+     // await writeFile(this._vectraKeys, "{}")
       this._config = config
-      this._keys = keys
+      this._keys = key
       // Create index
       const index = await this.load()
       await index.createIndex()
     } catch (error) {
       this._config = undefined
       this._keys = undefined
-      await rm(this.folderPath, { recursive: true })
+      await rm(this._folderPath, { recursive: true })
       throw new Error(`Error creating index: ${error.toString()}`)
     }
   }
@@ -111,7 +97,7 @@ export class CodeIndex {
    * Deletes the current code index.
    */
   async delete() {
-    await rm(this.folderPath, { recursive: true })
+    await rm(this._folderPath, { recursive: true })
     this._config = undefined
     this._keys = undefined
     this._index = undefined
@@ -121,20 +107,22 @@ export class CodeIndex {
    * Returns whether a `vectra.keys` file exists for the index.
    */
   async hasKeys() {
-    return await fs
-      .stat(path.join(this.folderPath, "vectra.keys"))
-      .then(() => true)
-      .catch(() => false)
+    return await exists(this._vectraKeys)
   }
   // LLM-REGION
   /**
    * Returns true if the index has been created.
    */
   async isCreated() {
-    return await fs
-      .stat(this.folderPath)
-      .then(() => true)
-      .catch(() => false)
+    return await exists(this._folderPath)
+  }
+  async readJSON(file) {
+    try {
+      let data = await readFile(file, "utf8")
+      return JSON.parse(data)
+    } catch (error) {
+      throw new Error(`Error reading JSON file: ${error.toString()}`)
+    }
   }
   // LLM-REGION
   /**
@@ -142,15 +130,14 @@ export class CodeIndex {
    */
   async load() {
     if (!this._config) {
-      const configPath = this._configFile
-      this._config = JSON.parse(await readFile(configPath, "utf8"))
+      let data = await this.readJSON(this._configFile)
+      this._config = data
     }
     if (!this._keys) {
-      const keysPath = this._vectraKeys
-      this._keys = JSON.parse(await readFile(keysPath, "utf8"))
+      this._keys = await this.readJSON(this._vectraKeys)
     }
     if (!this._index) {
-      const folderPath = path.join(this.folderPath, "index")
+      const folderPath = path.join(this._folderPath, "index")
       const embeddings = new OpenAIEmbeddings(
         Object.assign({ model: "text-embedding-ada-002" }, this._keys)
       )
@@ -170,9 +157,7 @@ export class CodeIndex {
    */
   async query(query, options) {
     if (!(await this.isCreated())) {
-      throw new Error(
-        noIndexError
-      )
+      throw new Error(noIndexError)
     }
     if (!(await this.hasKeys())) {
       vectraKeysError()
@@ -181,14 +166,14 @@ export class CodeIndex {
     const index = await this.load()
     return await index.queryDocuments(query, options)
   }
+
   /**
    * Rebuilds the code index.
    */
+
   async rebuild() {
     if (!(await this.isCreated())) {
-      throw new Error(
-        noIndexError
-      )
+      throw new Error(noIndexError)
     }
     if (!(await this.hasKeys())) {
       vectraKeysError()
@@ -199,25 +184,22 @@ export class CodeIndex {
       await index.deleteIndex()
     }
     await index.createIndex()
+
     // Index files
     const fetcher = new FileFetcher()
-    console.log(this._config.sources);
-    for (const source of this._config.sources) {
+
+    for await (const source of this._config.sources) {
       await fetcher.fetch(source, async (uri, text, documentType) => {
         // Ignore binary files
-       let shouldIgnore = ignore(uri, documentType)
+        let shouldIgnore = ignore(uri, documentType)
         if (shouldIgnore) {
           return true
-        }
-        else {
+        } else {
+          // Upsert document
           console.log(Colorize.progress(`adding: ${uri}`))
-       
-        
-        // Upsert document
-        console.log(Colorize.progress(`adding: ${uri}`))
-        await index.upsertDocument(uri, text, documentType)
-        return true 
-      }
+          await index.upsertDocument(uri, text, documentType)
+          return true
+        }
       })
     }
   }
@@ -229,9 +211,7 @@ export class CodeIndex {
   async remove(config) {
     var _a
     if (!(await this.isCreated())) {
-      throw new Error(
-        noIndexError
-      )
+      throw new Error(noIndexError)
     }
     // Ensure config loaded
     const configPath = this._configFile
@@ -264,9 +244,7 @@ export class CodeIndex {
    */
   async setConfig(config) {
     if (!(await this.isCreated())) {
-      throw new Error(
-        noIndexError
-      )
+      throw new Error(noIndexError)
     }
     // Ensure config loaded
     const configPath = this._configFile
@@ -299,15 +277,10 @@ export class CodeIndex {
    */
   async setKeys(keys) {
     if (!(await this.isCreated())) {
-      throw new Error(
-        noIndexError
-      )
+      throw new Error(noIndexError)
     }
     // Overwrite keys file
-    await writeFile(
-      this._vectraKeys,
-      JSON.stringify(keys)
-    )
+    await writeFile(this._vectraKeys, JSON.stringify(keys))
     this._keys = keys
   }
   // LLM-REGION
