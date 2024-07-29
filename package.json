@@ -17,7 +17,7 @@
         "elliotisms": "^0.0.37",
         "json-colorizer": "^2.2.2",
         "junk": "^4.0.1",
-        "prettier": "^3.3.3",
+        
         "promptrix": "0.4.2",
         "vectra": "^0.4.4",
         "yargs": "^17.7.2"
@@ -27,6 +27,7 @@
         "@release-it/bumper": "^6.0.1",
         "@stylistic/eslint-plugin-js": "^1.7.2",
         "eslint": "^9.0.0",
+        "prettier": "^3.3.3",
         "eslint-config-prettier": "^9.1.0",
         "eslint-plugin-no-secrets": "^1.0.2",
         "eslint-plugin-perfectionist": "^2.10.0",

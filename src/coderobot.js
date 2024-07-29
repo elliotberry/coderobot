@@ -1,4 +1,4 @@
-import { AlphaWave,OpenAIModel } from "alphawave"
+import { AlphaWave, OpenAIModel } from "alphawave"
 import * as readline from "node:readline"
 import {
   ConversationHistory,

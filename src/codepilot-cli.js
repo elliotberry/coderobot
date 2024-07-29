@@ -5,6 +5,8 @@ import { CodeIndex } from "./code-index.js"
 import Coderobot from "./coderobot.js"
 import Colorize from "./colorize.js"
 import { registerFunctions } from "./create-file.js"
+
+
 /**
  * Defines the commands supported by the coderobot CLI.
  */
@@ -66,9 +68,9 @@ export async function run() {
             .option('source', {
             alias: 's',
             array: true,
+            "default": "./",
             describe: 'source folder(s) to index.',
-            type: 'string',
-            "default": "./"
+            type: 'string'
         })
             .option('extension', {
             alias: 'e',
@@ -77,7 +79,7 @@ export async function run() {
             type: 'string'
         })
             .demandOption(['key', 'source']);
-    }, async ({model, key, source, extension}) => {
+    }, async ({extension, key, model, source}) => {
         console.log(Colorize.title(`Creating new code index`));
         // Get optimal config
         const config = getOptimalConfig(model, source, extension);
