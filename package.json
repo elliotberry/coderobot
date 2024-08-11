@@ -17,8 +17,8 @@
         "elliotisms": "^0.0.37",
         "json-colorizer": "^2.2.2",
         "junk": "^4.0.1",
-        
         "promptrix": "0.4.2",
+        "unified": "^11.0.5",
         "vectra": "^0.4.4",
         "yargs": "^17.7.2"
     },

@@ -32,7 +32,7 @@ const createFileFunction = {
 export function addCreateFile(coderobot) {
     coderobot.addFunction(createFileFunction, async (arguments_) => {
         const { contents, filePath } = arguments_;
-
+console.log('creating file at filePath:', filePath);
         // Check if the file already exists
         if (await fs.access(path.join(process.cwd(), filePath)).then(() => true).catch(() => false)) {
             return `A file already exists at that path.\nGive the user detailed instructions for how they should modify that file instead.`;
