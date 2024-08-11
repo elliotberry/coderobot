@@ -67,6 +67,7 @@ class Coderobot {
         switch (result.status) {
           case "success": {
             const message = result.message
+            console.log(message)
             if (message.function_call) {
               // Call function and add result to history
               const entry = _that._functions.get(message.function_call.name)

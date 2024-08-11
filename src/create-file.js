@@ -55,9 +55,3 @@ export function addCreateFile(coderobot) {
         }
     });
 }
-
-
-export function registerFunctions(coderobot) {
-    // Add the createFile function to the coderobot instance
-    addCreateFile(coderobot);
-}

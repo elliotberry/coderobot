@@ -4,7 +4,8 @@ import yargs from "yargs/yargs"
 import { CodeIndex } from "./code-index.js"
 import Coderobot from "./coderobot.js"
 import Colorize from "./colorize.js"
-import { registerFunctions } from "./create-file.js"
+import { addCreateFile } from "./create-file.js"
+import { addModifyFile } from "./modify-file.js"
 
 /**
  * Defines the commands supported by the coderobot CLI.
@@ -55,7 +56,8 @@ export async function run() {
       await index.load()
       // Start a Coderobot chat session
       const coderobot = new Coderobot(index)
-      registerFunctions(coderobot)
+     addCreateFile(coderobot)
+     addModifyFile(coderobot)
       await coderobot.chat()
     })
     .command(
