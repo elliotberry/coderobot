@@ -93,7 +93,7 @@ export function addModifyFile(coderobot) {
            
             // Add the file to the code index
             await coderobot.index.upsertDocument(filePath);
-            console.log(Colorize.highlight(`Modified a file: ${filePath}`));
+            Colorize.highlight(`Modified a file: ${filePath}`));
             return `Successfully Modified file at ${filePath}`;
         } catch (error) {
             return `Failed to create file at ${filePath} due to the following error:\n${error.message}`;

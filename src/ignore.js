@@ -78,7 +78,7 @@ const partialStringsToIgnore = [
   ".codepilot"
 ]
 
-const ignores = function (filename, documentType) {
+const ignores = function (filename) {
   let returnedValue = false
   for (const partialString of partialStringsToIgnore) {
     if (filename.includes(partialString)) {
@@ -98,7 +98,7 @@ const ignores = function (filename, documentType) {
     returnedValue = true
   }
   if (returnedValue) {
-    console.log(Colorize.warn(`ignoring: ${filename}`))
+    Colorize.warn(`ignoring: ${filename}`)
   }
   return returnedValue
 }

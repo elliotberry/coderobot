@@ -1,7 +1,8 @@
-import { mkdir, readFile, rm, writeFile, stat } from "node:fs/promises"
+import exists from "elliotisms/exists"
+import { mkdir, readFile, rm, stat,writeFile } from "node:fs/promises"
 import path from "node:path"
 import { FileFetcher, LocalDocumentIndex, OpenAIEmbeddings } from "vectra"
-import exists from "elliotisms/exists"
+
 import Colorize from "./colorize.js"
 import { vectraKeysError } from "./dumb-errors.js"
 import ignore from "./ignore.js"
@@ -67,7 +68,6 @@ export class CodeIndex {
    * @param config Source code index configuration.
    */
   async create(key, config) {
-  
     // Delete folder if it exists
     if (await exists(this._folderPath)) {
       await rm(this._folderPath, { recursive: true })
@@ -80,7 +80,7 @@ export class CodeIndex {
       // Create keys file
       await writeFile(this._vectraKeys, JSON.stringify(key))
       // Create .gitignore file
-     // await writeFile(this._vectraKeys, "{}")
+      // await writeFile(this._vectraKeys, "{}")
       this._config = config
       this._keys = key
       // Create index
@@ -116,15 +116,6 @@ export class CodeIndex {
   async isCreated() {
     return await exists(this._folderPath)
   }
-  async readJSON(file) {
-    try {
-      let data = await readFile(file, "utf8")
-      return JSON.parse(data)
-    } catch (error) {
-      throw new Error(`Error reading JSON file: ${error.toString()}`)
-    }
-  }
-  // LLM-REGION
   /**
    * Loads the current code index.
    */
@@ -166,6 +157,15 @@ export class CodeIndex {
     const index = await this.load()
     return await index.queryDocuments(query, options)
   }
+  // LLM-REGION
+  async readJSON(file) {
+    try {
+      let data = await readFile(file, "utf8")
+      return JSON.parse(data)
+    } catch (error) {
+      throw new Error(`Error reading JSON file: ${error.toString()}`)
+    }
+  }
 
   /**
    * Rebuilds the code index.
@@ -196,7 +196,7 @@ export class CodeIndex {
           return true
         } else {
           // Upsert document
-          console.log(Colorize.progress(`adding: ${uri}`))
+          Colorize.progress(`adding: ${uri}`)
           await index.upsertDocument(uri, text, documentType)
           return true
         }

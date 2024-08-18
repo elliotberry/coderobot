@@ -7,35 +7,29 @@ import Colorize from "./colorize.js"
 import { addCreateFile } from "./create-file.js"
 import { addModifyFile } from "./modify-file.js"
 
-
 const verifyIndex = async () => {
-    // Ensure index exists and has keys
-    const index = new CodeIndex()
-    if (!(await index.isCreated())) {
-      console.log(
-        Colorize.output(
-          [
-            `We need to first create an index before you can chat with coderobot.`
-          ].join(`\n`)
-        )
-      )
-      return
-    }
-    if (!(await index.hasKeys())) {
-      console.log(
-        Colorize.output(
-          [
-            `A Coderobot index was found but you haven't configured your personal OpenAI key.`,
-            `You'll need to provide an OpenAI API key before you can continue.`
-          ].join(`\n`)
-        )
-      )
-      return
-    }
-    // Load index
-    await index.load()
-    return index
+  // Ensure index exists and has keys
+  const index = new CodeIndex()
+  if (!(await index.isCreated())) {
+    Colorize.output(
+      [
+        `We need to first create an index before you can chat with coderobot.`
+      ].join(`\n`)
+    )
+
+    return
   }
+  if (!(await index.hasKeys())) {
+    Colorize.output(
+      `A Coderobot index was found but you haven't configured your personal OpenAI key.`
+    )
+
+    return
+  }
+  // Load index
+  await index.load()
+  return index
+}
 
 /**
  * Defines the commands supported by the coderobot CLI.
@@ -52,13 +46,12 @@ export async function run() {
       await coderobot.chat()
     })
     .command("cmd", "cmd mode", {}, async (t) => {
-     
       const index = await verifyIndex()
       // Start a Coderobot chat session
       const coderobot = new Coderobot(index)
       addCreateFile(coderobot)
       addModifyFile(coderobot)
-      await coderobot.command(t._[1]) 
+      await coderobot.command(t._[1])
     })
     .command(
       "create",
@@ -111,26 +104,26 @@ export async function run() {
         if (!source) {
           source = ["./"]
         }
-        console.log(Colorize.title(`Creating new code index`))
+       Colorize.title(`Creating new code index`)
         // Get optimal config
         const config = getOptimalConfig(model, source, extension)
         // Create index
         const index = new CodeIndex()
         await index.create({ apiKey: key }, config)
-        console.log(
+       
           Colorize.output(
             [`New index created under the '${index.folderPath}' folder.`].join(
               "\n"
             )
           )
-        )
+        
         // Build index
         await index.rebuild()
-        console.log(
+        
           Colorize.output(
             [`\nThe index for your source code has been built.`].join("\n")
           )
-        )
+        
       }
     )
     .command(
@@ -140,7 +133,7 @@ export async function run() {
       async (arguments_) => {
         const index = new CodeIndex()
         await index.delete()
-        console.log(Colorize.output(`Your index was deleted.`))
+        Colorize.output(`Your index was deleted.`)
       }
     )
     .command(
@@ -183,7 +176,7 @@ export async function run() {
           return
         }
         // Add sources and/or extensions
-        console.log(Colorize.title("Updating sources and/or extensions"))
+        Colorize.title("Updating sources and/or extensions")
         await index.add({
           extensions: arguments_.extension,
           sources: arguments_.source
@@ -221,7 +214,7 @@ export async function run() {
         return
       }
       // Rebuild index
-      console.log(Colorize.title("Rebuilding code index"))
+      Colorize.title("Rebuilding code index")
       await index.rebuild()
       console.log(
         Colorize.output(
@@ -269,7 +262,7 @@ export async function run() {
           return
         }
         // Removing sources and/or extensions
-        console.log(Colorize.title("Updating sources and/or extensions"))
+        Colorize.title("Updating sources and/or extensions")
         await index.remove({
           extensions: arguments_.extension,
           sources: arguments_.source
@@ -306,13 +299,13 @@ export async function run() {
       async (arguments_) => {
         const index = new CodeIndex()
         if (arguments_.key) {
-          console.log(Colorize.output(`Updating OpenAI key`))
+          Colorize.output(`Updating OpenAI key`)
           await index.setKeys({ apiKey: arguments_.key })
         }
         if (!arguments_.model) {
           return
         }
-        console.log(Colorize.output(`Updating model`))
+        Colorize.output(`Updating model`)
         const config = getOptimalConfig(
           arguments_.model,
           arguments_.source,

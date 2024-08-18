@@ -48,7 +48,7 @@ console.log('creating file at filePath:', filePath);
 
             // Add the file to the code index
             await coderobot.index.upsertDocument(filePath);
-            console.log(Colorize.highlight(`Created a new file: ${filePath}`));
+            Colorize.highlight(`Created a new file: ${filePath}`));
             return `Successfully created file at ${filePath}`;
         } catch (error) {
             return `Failed to create file at ${filePath} due to the following error:\n${error.message}`;
