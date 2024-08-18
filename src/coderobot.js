@@ -4,7 +4,8 @@ import {
   ConversationHistory,
   Prompt,
   SystemMessage,
-  UserMessage} from "promptrix"
+  UserMessage
+} from "promptrix"
 
 import Colorize from "./colorize.js"
 import { SourceCodeSection } from "./source-code-section.js"
@@ -32,6 +33,65 @@ class Coderobot {
   addFunction(schema, function_) {
     this._functions.set(schema.name, { fn: function_, schema })
     return this
+  }
+  async errorResult(result) {
+    await (result.message ?
+      Colorize.error(`${result.status}: ${result.message}`)
+    : Colorize.error(`A result status of '${result.status}' was returned.`))
+  }
+  /**
+   * Starts the chat session and listens for user input.
+   */
+  async command(question) {
+    // Create model and wave
+    const model = this.createModel();
+    const wave = new AlphaWave({
+      model,
+      prompt: new Prompt([
+        new SystemMessage(
+          `You are an expert software developer. You are answering a single question from another developer who is asking for help with the project they're working on.`
+        ),
+        new SourceCodeSection(this._index, 0.6),
+        new UserMessage("{{$input}}", 500)
+      ])
+    });
+  
+    async function completePrompt(input) {
+      // Route user's question to wave
+      const result = await wave.completePrompt(input);
+      switch (result.status) {
+        case "success": {
+          const message = result.message;
+          console.log(message.content);
+          if (message.function_call) {
+            // Call function and add result to history
+            const entry = this._functions.get(message.function_call.name);
+            if (entry) {
+              const arguments_ = message.function_call.arguments
+                ? JSON.parse(message.function_call.arguments)
+                : {};
+              const result = await entry.fn(arguments_);
+              wave.addFunctionResultToHistory(
+                message.function_call.name,
+                result
+              );
+              // Call back in with the function result
+              await completePrompt("");
+            } else {
+              console.error(`Function '${message.function_call.name}' was not found.`);
+            }
+          }
+          break;
+        }
+        default: {
+          console.error(`${result.status}: ${result.message || 'An error occurred'}`);
+          break;
+        }
+      }
+    }
+  
+    // Complete the prompt using the provided question
+    await completePrompt(question);
   }
   /**
    * Starts the chat session and listens for user input.
@@ -97,13 +157,13 @@ class Coderobot {
             break
           }
           default: {
-            await (result.message ? respond(
-                Colorize.error(`${result.status}: ${result.message}`)
-              ) : respond(
+            await (result.message ?
+              respond(Colorize.error(`${result.status}: ${result.message}`))
+            : respond(
                 Colorize.error(
                   `A result status of '${result.status}' was returned.`
                 )
-              ));
+              ))
             break
           }
         }

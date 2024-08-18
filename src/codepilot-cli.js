@@ -7,6 +7,36 @@ import Colorize from "./colorize.js"
 import { addCreateFile } from "./create-file.js"
 import { addModifyFile } from "./modify-file.js"
 
+
+const verifyIndex = async () => {
+    // Ensure index exists and has keys
+    const index = new CodeIndex()
+    if (!(await index.isCreated())) {
+      console.log(
+        Colorize.output(
+          [
+            `We need to first create an index before you can chat with coderobot.`
+          ].join(`\n`)
+        )
+      )
+      return
+    }
+    if (!(await index.hasKeys())) {
+      console.log(
+        Colorize.output(
+          [
+            `A Coderobot index was found but you haven't configured your personal OpenAI key.`,
+            `You'll need to provide an OpenAI API key before you can continue.`
+          ].join(`\n`)
+        )
+      )
+      return
+    }
+    // Load index
+    await index.load()
+    return index
+  }
+
 /**
  * Defines the commands supported by the coderobot CLI.
  */
@@ -14,51 +44,21 @@ export async function run() {
   const arguments_ = await yargs(hideBin(process.argv))
     .scriptName("coderobot")
     .command("$0", "chat mode", {}, async () => {
-      // Ensure index exists and has keys
-      const index = new CodeIndex()
-      if (!(await index.isCreated())) {
-        console.log(
-          Colorize.output(
-            [
-              `We need to first create an index before you can chat with coderobot.`,
-              `You'll need to provide an OpenAI API key and a source folder to index.`,
-              `You can create an OpenAI API key at https://platform.openai.com/account/api-keys.`,
-              `A paid account is recommended but OpenAI will give you $5 in free credits to get started.`,
-              `Once you have your OpenAI API key, you can create a new index by running:\n`,
-              `coderobot create --key <api key> --source <source folder> [--source <additional source folder>]\n`,
-              `By default, all files under your source folders will be included in the index.`,
-              `If you'd only like certain file extensions to be indexed, you can add the "--extension <included extensions> [--extension <additional extension>]" option.`,
-              `Once the index has finished building, you can start chatting with coderobot by running:\n`,
-              `coderobot\n`
-            ].join(`\n`)
-          )
-        )
-        return
-      }
-      if (!(await index.hasKeys())) {
-        console.log(
-          Colorize.output(
-            [
-              `A Coderobot index was found but you haven't configured your personal OpenAI key.`,
-              `You'll need to provide an OpenAI API key before you can continue.`,
-              `You can create an OpenAI API key at https://platform.openai.com/account/api-keys.`,
-              `A paid account is recommended but OpenAI will give you $5 in free credits to get started.`,
-              `Once you have your OpenAI API key, you can configure your local index to use that key by running:\n`,
-              `Coderobot set --key <api key>\n`,
-              `Once you've configured your personal key, you can start chatting with Coderobot by running:\n`,
-              `Coderobot\n`
-            ].join(`\n`)
-          )
-        )
-        return
-      }
-      // Load index
-      await index.load()
+      const index = await verifyIndex()
       // Start a Coderobot chat session
       const coderobot = new Coderobot(index)
-     addCreateFile(coderobot)
-     addModifyFile(coderobot)
+      addCreateFile(coderobot)
+      addModifyFile(coderobot)
       await coderobot.chat()
+    })
+    .command("cmd", "cmd mode", {}, async (t) => {
+     
+      const index = await verifyIndex()
+      // Start a Coderobot chat session
+      const coderobot = new Coderobot(index)
+      addCreateFile(coderobot)
+      addModifyFile(coderobot)
+      await coderobot.command(t._[1]) 
     })
     .command(
       "create",
@@ -91,6 +91,12 @@ export async function run() {
             describe: "extension(s) to filter to.",
             type: "string"
           })
+          .option("command", {
+            alias: "e",
+            array: true,
+            describe: "issue a single question to gpt.",
+            type: "string"
+          })
       },
       async ({ extension, key, model, source }) => {
         if (!key) {
@@ -103,8 +109,8 @@ export async function run() {
           }
         }
         if (!source) {
-            source = ["./"]
-            }
+          source = ["./"]
+        }
         console.log(Colorize.title(`Creating new code index`))
         // Get optimal config
         const config = getOptimalConfig(model, source, extension)
@@ -113,18 +119,16 @@ export async function run() {
         await index.create({ apiKey: key }, config)
         console.log(
           Colorize.output(
-            [
-              `New index created under the '${index.folderPath}' folder.`
-            ].join("\n")
+            [`New index created under the '${index.folderPath}' folder.`].join(
+              "\n"
+            )
           )
         )
         // Build index
         await index.rebuild()
         console.log(
           Colorize.output(
-            [
-              `\nThe index for your source code has been built.`,
-            ].join("\n")
+            [`\nThe index for your source code has been built.`].join("\n")
           )
         )
       }
@@ -210,7 +214,7 @@ export async function run() {
         console.log(
           Colorize.output(
             [
-              `A Coderobot index was found but you haven't configured your personal OpenAI key.`,
+              `A Coderobot index was found but you haven't configured your personal OpenAI key.`
             ].join(`\n`)
           )
         )
@@ -221,9 +225,7 @@ export async function run() {
       await index.rebuild()
       console.log(
         Colorize.output(
-          [
-            `\nThe index for your source code has been rebuilt.`
-          ].join("\n")
+          [`\nThe index for your source code has been rebuilt.`].join("\n")
         )
       )
     })
@@ -260,7 +262,7 @@ export async function run() {
           console.log(
             Colorize.output(
               [
-                `A Coderobot index was found but you haven't configured your personal OpenAI key.`,
+                `A Coderobot index was found but you haven't configured your personal OpenAI key.`
               ].join(`\n`)
             )
           )
