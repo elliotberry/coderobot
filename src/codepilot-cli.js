@@ -4,8 +4,7 @@ import yargs from "yargs/yargs"
 import { CodeIndex } from "./code-index.js"
 import Coderobot from "./coderobot.js"
 import Colorize from "./colorize.js"
-import { addCreateFile } from "./create-file.js"
-import { addModifyFile } from "./modify-file.js"
+
 
 const verifyIndex = async () => {
   // Ensure index exists and has keys
@@ -41,16 +40,13 @@ export async function run() {
       const index = await verifyIndex()
       // Start a Coderobot chat session
       const coderobot = new Coderobot(index)
-      addCreateFile(coderobot)
-      addModifyFile(coderobot)
       await coderobot.chat()
     })
     .command("cmd", "cmd mode", {}, async (t) => {
       const index = await verifyIndex()
       // Start a Coderobot chat session
       const coderobot = new Coderobot(index)
-      addCreateFile(coderobot)
-      addModifyFile(coderobot)
+
       await coderobot.command(t._[1])
     })
     .command(

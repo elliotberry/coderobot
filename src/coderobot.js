@@ -6,7 +6,8 @@ import {
   SystemMessage,
   UserMessage
 } from "promptrix"
-
+import addCreateFile from "./create-file.js"
+import addModifyFile from "./modify-file.js"
 import Colorize from "./colorize.js"
 import { SourceCodeSection } from "./source-code-section.js"
 
@@ -21,6 +22,8 @@ class Coderobot {
   constructor(index) {
     this._functions = new Map()
     this._index = index
+    addCreateFile(this)
+    //addModifyFile(this)
   }
   /**
    * Registers a new function to be used in the chat completion.
@@ -31,6 +34,7 @@ class Coderobot {
    * @param fn The function to be executed.
    */
   addFunction(schema, function_) {
+   
     this._functions.set(schema.name, { fn: function_, schema })
     return this
   }
@@ -97,6 +101,7 @@ class Coderobot {
    * Starts the chat session and listens for user input.
    */
   async chat() {
+    console.log(this._functions)
     // Create a readline interface object with the standard input and output streams
     const rl = readline.createInterface({
       input: process.stdin,
@@ -127,9 +132,13 @@ class Coderobot {
         switch (result.status) {
           case "success": {
             const message = result.message
+            console.log("message")
             console.log(message)
             if (message.function_call) {
+              console.log("Function call")
+              console.log(message.function_call)
               // Call function and add result to history
+              console.log( _that._functions.get(message.function_call.name))
               const entry = _that._functions.get(message.function_call.name)
               if (entry) {
                 const arguments_ =
@@ -169,7 +178,10 @@ class Coderobot {
         }
       }
       // Show the bots message
+      console.log("botMessage")
+      if (botMessage) {
       console.log(botMessage)
+      }
       // Prompt the user for input
       rl.question("User: ", async (input) => {
         // Check if the user wants to exit the chat

@@ -2,7 +2,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
-
 import Colorize from "./colorize.js";
 
 
@@ -13,21 +12,21 @@ async function applyUnifiedDiff(filePath, unifiedDiff) {
     const diffLines = unifiedDiff.split('\n');
     let lineOffset = 0;
 
-    for (let i = 0; i < diffLines.length; i++) {
-        const line = diffLines[i];
+    for (let index = 0; index < diffLines.length; index++) {
+        const line = diffLines[index];
 
         // Find the start of the diff hunk
         if (line.startsWith('@@')) {
             const hunkHeader = line;
-            const match = hunkHeader.match(/@@ \-(\d+),(\d+) \+(\d+),(\d+) @@/);
+            const match = hunkHeader.match(/@@ -(\d+),(\d+) \+(\d+),(\d+) @@/);
             if (!match) continue;
 
-            const oldStartLine = parseInt(match[1], 10) - 1; // 0-based index
-            const newStartLine = parseInt(match[3], 10) - 1;
+            const oldStartLine = Number.parseInt(match[1], 10) - 1; // 0-based index
+            const newStartLine = Number.parseInt(match[3], 10) - 1;
 
-            let j = i + 1;
-            while (j < diffLines.length && !diffLines[j].startsWith('@@')) {
-                const diffLine = diffLines[j];
+            let index_ = index + 1;
+            while (index_ < diffLines.length && !diffLines[index_].startsWith('@@')) {
+                const diffLine = diffLines[index_];
                 if (diffLine.startsWith('-')) {
                     fileLines.splice(oldStartLine + lineOffset, 1);
                     lineOffset--;
@@ -38,10 +37,10 @@ async function applyUnifiedDiff(filePath, unifiedDiff) {
                     oldStartLine++;
                     newStartLine++;
                 }
-                j++;
+                index_++;
             }
 
-            i = j - 1; // Skip to the next hunk
+            index = index_ - 1; // Skip to the next hunk
         }
     }
 
@@ -72,8 +71,9 @@ const modifyFileFunction = {
 /**
  * Adds the createFile function to the coderobot instance.
  */
-export function addModifyFile(coderobot) {
+async function addModifyFile(coderobot) {
     coderobot.addFunction(modifyFileFunction, async (arguments_) => {
+        console.log("arguments_", arguments_)
         const { changedContentDiff, filePath } = arguments_;
         console.log("Modifying file at", filePath);
         // Check if the file already exists
@@ -93,7 +93,7 @@ export function addModifyFile(coderobot) {
            
             // Add the file to the code index
             await coderobot.index.upsertDocument(filePath);
-            Colorize.highlight(`Modified a file: ${filePath}`));
+            Colorize.highlight(`Modified a file: ${filePath}`);
             return `Successfully Modified file at ${filePath}`;
         } catch (error) {
             return `Failed to create file at ${filePath} due to the following error:\n${error.message}`;
@@ -101,4 +101,4 @@ export function addModifyFile(coderobot) {
     });
 }
 
-
+export default addModifyFile;
