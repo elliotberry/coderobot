@@ -2,7 +2,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
-import Colorize from "./colorize.js";
+
 
 
 async function applyUnifiedDiff(filePath, unifiedDiff) {
@@ -93,7 +93,7 @@ async function addModifyFile(coderobot) {
            
             // Add the file to the code index
             await coderobot.index.upsertDocument(filePath);
-            Colorize.highlight(`Modified a file: ${filePath}`);
+           console.log(`Modified a file: ${filePath}`);
             return `Successfully Modified file at ${filePath}`;
         } catch (error) {
             return `Failed to create file at ${filePath} due to the following error:\n${error.message}`;

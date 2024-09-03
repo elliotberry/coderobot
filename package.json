@@ -15,6 +15,7 @@
     "dependencies": {
         "alphawave": "0.8.2",
         "elliotisms": "^0.0.37",
+        "is-binary": "^0.1.0",
         "json-colorizer": "^2.2.2",
         "junk": "^4.0.1",
         "promptrix": "0.4.2",

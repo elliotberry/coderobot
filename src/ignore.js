@@ -1,7 +1,7 @@
 import { isJunk } from "junk"
 import path from "node:path"
+import isBinary from "is-binary"
 
-import Colorize from "./colorize.js"
 const IGNORED_FILES = new Set([
   ".gif",
   ".jpg",
@@ -75,10 +75,11 @@ const partialStringsToIgnore = [
   ".Coderobot",
   ".coderobot",
   ".Codepilot",
-  ".codepilot"
+  ".codepilot",
+  ".glb"
 ]
 
-const ignores = function (filename) {
+const ignores = (filename) => {
   let returnedValue = false
   for (const partialString of partialStringsToIgnore) {
     if (filename.includes(partialString)) {
@@ -86,7 +87,9 @@ const ignores = function (filename) {
       break
     }
   }
-
+  if (isBinary(filename)) {
+    returnedValue = true
+  }
   if (filename.includes("node_modules")) {
     returnedValue = true
   }
@@ -98,7 +101,7 @@ const ignores = function (filename) {
     returnedValue = true
   }
   if (returnedValue) {
-    Colorize.warn(`ignoring: ${filename}`)
+    console.warn(`ignoring: ${filename}`)
   }
   return returnedValue
 }

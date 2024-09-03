@@ -1,15 +1,14 @@
-import { AlphaWave, OpenAIModel } from "alphawave"
-import * as readline from "node:readline"
+import { AlphaWave, OpenAIModel } from "alphawave";
+import * as readline from "node:readline";
 import {
   ConversationHistory,
   Prompt,
   SystemMessage,
   UserMessage
-} from "promptrix"
-import addCreateFile from "./create-file.js"
-import addModifyFile from "./modify-file.js"
-import Colorize from "./colorize.js"
-import { SourceCodeSection } from "./source-code-section.js"
+} from "promptrix";
+import addCreateFile from "./create-file.js";
+
+import { SourceCodeSection } from "./source-code-section.js";
 
 /**
  * The main class for the Coderobot application.
@@ -20,34 +19,73 @@ class Coderobot {
    * @param index The code index to use.
    */
   constructor(index) {
-    this._functions = new Map()
-    this._index = index
-    addCreateFile(this)
+    this._functions = new Map();
+    this._index = index;
+    addCreateFile(this);
     //addModifyFile(this)
   }
+
   /**
    * Registers a new function to be used in the chat completion.
-   * @remarks
-   * This is used to add new capabilities to Coderobot's chat feature
-   * @param name The name of the function.
    * @param schema The schema of the function.
-   * @param fn The function to be executed.
+   * @param function_ The function to be executed.
    */
   addFunction(schema, function_) {
-   
-    this._functions.set(schema.name, { fn: function_, schema })
-    return this
+    this._functions.set(schema.name, { fn: function_, schema });
+    return this;
   }
-  async errorResult(result) {
-    await (result.message ?
-      Colorize.error(`${result.status}: ${result.message}`)
-    : Colorize.error(`A result status of '${result.status}' was returned.`))
-  }
+
   /**
-   * Starts the chat session and listens for user input.
+   * Handles errors in the result.
+   * @param result The result object containing status and message.
+   */
+  async errorResult(result) {
+    const errorMessage = result.message
+      ? `${result.status}: ${result.message}`
+      : `A result status of '${result.status}' was returned.`;
+   console.error(errorMessage);
+  }
+
+  /**
+   * Processes the prompt completion.
+   * @param wave The AlphaWave instance.
+   * @param input The input to process.
+   */
+  async completePrompt(wave, input) {
+    const result = await wave.completePrompt(input);
+    switch (result.status) {
+      case "success": {
+        const message = result.message;
+        if (message.function_call) {
+          const entry = this._functions.get(message.function_call.name);
+          if (entry) {
+            const arguments_ = message.function_call.arguments
+              ? JSON.parse(message.function_call.arguments)
+              : {};
+            const functionResult = await entry.fn(arguments_);
+            wave.addFunctionResultToHistory(
+              message.function_call.name,
+              functionResult
+            );
+            await this.completePrompt(wave, "");
+          } else {
+            console.error(`Function '${message.function_call.name}' was not found.`);
+          }
+        }
+        break;
+      }
+      default: {
+        console.error(`${result.status}: ${result.message || 'An error occurred'}`);
+        break;
+      }
+    }
+  }
+
+  /**
+   * Starts the command session.
+   * @param question The question to ask.
    */
   async command(question) {
-    // Create model and wave
     const model = this.createModel();
     const wave = new AlphaWave({
       model,
@@ -59,56 +97,39 @@ class Coderobot {
         new UserMessage("{{$input}}", 500)
       ])
     });
-  
-    async function completePrompt(input) {
-      // Route user's question to wave
-      const result = await wave.completePrompt(input);
-      switch (result.status) {
-        case "success": {
-          const message = result.message;
-          console.log(message.content);
-          if (message.function_call) {
-            // Call function and add result to history
-            const entry = this._functions.get(message.function_call.name);
-            if (entry) {
-              const arguments_ = message.function_call.arguments
-                ? JSON.parse(message.function_call.arguments)
-                : {};
-              const result = await entry.fn(arguments_);
-              wave.addFunctionResultToHistory(
-                message.function_call.name,
-                result
-              );
-              // Call back in with the function result
-              await completePrompt("");
-            } else {
-              console.error(`Function '${message.function_call.name}' was not found.`);
-            }
-          }
-          break;
-        }
-        default: {
-          console.error(`${result.status}: ${result.message || 'An error occurred'}`);
-          break;
-        }
-      }
-    }
-  
-    // Complete the prompt using the provided question
-    await completePrompt(question);
+    await this.completePrompt(wave, question);
   }
+
+  /**
+   * Handles user responses in the chat loop.
+   * @param wave The AlphaWave instance.
+   * @param rl The readline interface instance.
+   * @param botMessage The message from the bot.
+   */
+  async respond(wave, rl, botMessage) {
+    if (botMessage) {
+      console.log(botMessage);
+    }
+    rl.question("User: ", async (input) => {
+      if (input.toLowerCase() === "exit") {
+        rl.close();
+        process.exit();
+      } else {
+        await this.completePrompt(wave, input);
+      }
+    });
+  }
+
   /**
    * Starts the chat session and listens for user input.
    */
   async chat() {
-    console.log(this._functions)
-    // Create a readline interface object with the standard input and output streams
     const rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout
-    })
-    // Create model and wave
-    const model = this.createModel()
+    });
+
+    const model = this.createModel();
     const wave = new AlphaWave({
       model,
       prompt: new Prompt([
@@ -122,89 +143,16 @@ class Coderobot {
         new ConversationHistory("history", 0.4),
         new UserMessage("{{$input}}", 500)
       ])
-    })
-    // Define main chat loop
-    const _that = this
-    async function respond(botMessage) {
-      async function completePrompt(input) {
-        // Route users message to wave
-        const result = await wave.completePrompt(input)
-        switch (result.status) {
-          case "success": {
-            const message = result.message
-            console.log("message")
-            console.log(message)
-            if (message.function_call) {
-              console.log("Function call")
-              console.log(message.function_call)
-              // Call function and add result to history
-              console.log( _that._functions.get(message.function_call.name))
-              const entry = _that._functions.get(message.function_call.name)
-              if (entry) {
-                const arguments_ =
-                  message.function_call.arguments ?
-                    JSON.parse(message.function_call.arguments)
-                  : {}
-                const result = await entry.fn(arguments_)
-                wave.addFunctionResultToHistory(
-                  message.function_call.name,
-                  result
-                )
-                // Call back in with the function result
-                await completePrompt("")
-              } else {
-                respond(
-                  Colorize.error(
-                    `Function '${message.function_call.name}' was not found.`
-                  )
-                )
-              }
-            } else {
-              // Call respond to display response and wait for user input
-              await respond(Colorize.output(message.content))
-            }
-            break
-          }
-          default: {
-            await (result.message ?
-              respond(Colorize.error(`${result.status}: ${result.message}`))
-            : respond(
-                Colorize.error(
-                  `A result status of '${result.status}' was returned.`
-                )
-              ))
-            break
-          }
-        }
-      }
-      // Show the bots message
-      console.log("botMessage")
-      if (botMessage) {
-      console.log(botMessage)
-      }
-      // Prompt the user for input
-      rl.question("User: ", async (input) => {
-        // Check if the user wants to exit the chat
-        if (input.toLowerCase() === "exit") {
-          // Close the readline interface and exit the process
-          rl.close()
-          process.exit()
-        } else {
-          // Complete the prompt using the user's input
-          completePrompt(input)
-        }
-      })
-    }
-    // Start chat session
-    respond(Colorize.output(`Hello, how can I help you?`))
+    });
+
+    await this.respond(wave, rl, null);
   }
+
+  /**
+   * Creates and returns the model to be used by AlphaWave.
+   */
   createModel() {
-    // Generate list of functions
-    const functions = []
-    for (const entry of this._functions.values()) {
-      functions.push(entry.schema)
-    }
-    // Create an instance of a model
+    const functions = Array.from(this._functions.values()).map(entry => entry.schema);
     const modelOptions = {
       apiKey: this._index.keys.apiKey,
       completion_type: "chat",
@@ -212,18 +160,19 @@ class Coderobot {
       max_tokens: this._index.config.max_tokens,
       model: this._index.config.model,
       temperature: this._index.config.temperature
-      //logRequests: true
-    }
+    };
     if (functions.length > 0) {
-      modelOptions.functions = functions
+      modelOptions.functions = functions;
     }
-    return new OpenAIModel(modelOptions)
+    return new OpenAIModel(modelOptions);
   }
+
   /**
    * Gets the code index.
    */
   get index() {
-    return this._index
+    return this._index;
   }
 }
-export default Coderobot
+
+export default Coderobot;

@@ -1,7 +1,7 @@
 import fs from "node:fs/promises"
 import path from "node:path"
 
-import Colorize from "./colorize.js"
+
 
 /**
  * Schema for a function that creates a file at the specified path.
@@ -54,7 +54,7 @@ function addCreateFile(coderobot) {
 
       // Add the file to the code index
       await coderobot.index.upsertDocument(filePath)
-      Colorize.highlight(`Created a new file: ${filePath}`)
+      console.log(`Created a new file: ${filePath}`)
       return `Successfully created file at ${filePath}`
     } catch (error) {
       return `Failed to create file at ${filePath} due to the following error:\n${error.message}`

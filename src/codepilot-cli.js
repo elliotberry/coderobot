@@ -3,23 +3,19 @@ import yargs from "yargs/yargs"
 
 import { CodeIndex } from "./code-index.js"
 import Coderobot from "./coderobot.js"
-import Colorize from "./colorize.js"
-
 
 const verifyIndex = async () => {
   // Ensure index exists and has keys
   const index = new CodeIndex()
   if (!(await index.isCreated())) {
-    Colorize.output(
-      [
-        `We need to first create an index before you can chat with coderobot.`
-      ].join(`\n`)
+    console.log(
+      `We need to first create an index before you can chat with coderobot.`
     )
 
     return
   }
   if (!(await index.hasKeys())) {
-    Colorize.output(
+    console.log(
       `A Coderobot index was found but you haven't configured your personal OpenAI key.`
     )
 
@@ -100,26 +96,19 @@ export async function run() {
         if (!source) {
           source = ["./"]
         }
-       Colorize.title(`Creating new code index`)
+        console.log(`Creating new code index`)
         // Get optimal config
         const config = getOptimalConfig(model, source, extension)
         // Create index
         const index = new CodeIndex()
         await index.create({ apiKey: key }, config)
-       
-          Colorize.output(
-            [`New index created under the '${index.folderPath}' folder.`].join(
-              "\n"
-            )
-          )
-        
+
+        console.log(`New index created under the '${index.folderPath}' folder.`)
+
         // Build index
         await index.rebuild()
-        
-          Colorize.output(
-            [`\nThe index for your source code has been built.`].join("\n")
-          )
-        
+
+        console.log(`The index for your source code has been built.`)
       }
     )
     .command(
@@ -129,7 +118,7 @@ export async function run() {
       async (arguments_) => {
         const index = new CodeIndex()
         await index.delete()
-        Colorize.output(`Your index was deleted.`)
+        console.log(`Your index was deleted.`)
       }
     )
     .command(
@@ -154,37 +143,29 @@ export async function run() {
         // Ensure index exists and has keys
         const index = new CodeIndex()
         if (!(await index.isCreated())) {
-          console.log(
-            Colorize.output(
+         
+            console.log(
               `No index was found. Please run 'Coderobot create' first.`
             )
-          )
+          
           return
         }
         if (!(await index.hasKeys())) {
-          console.log(
-            Colorize.output(
-              [
-                `A Coderobot index was found but you haven't configured your personal OpenAI key.`
-              ].join(`\n`)
+        
+            console.log(
+              `A Coderobot index was found but you haven't configured your personal OpenAI key.`
             )
-          )
+          
           return
         }
         // Add sources and/or extensions
-        Colorize.title("Updating sources and/or extensions")
+        console.log("Updating sources and/or extensions")
         await index.add({
           extensions: arguments_.extension,
           sources: arguments_.source
         })
         console.log(
-          Colorize.output(
-            [
-              `Your sources and/or extensions have been updated.`,
-              `You can rebuild your index by running:\n`,
-              `Coderobot rebuild\n`
-            ].join("\n")
-          )
+          `Your sources and/or extensions have been updated. You can rebuild your index by running: Coderobot rebuild\n`
         )
       }
     )
@@ -192,31 +173,25 @@ export async function run() {
       // Ensure index exists and has keys
       const index = new CodeIndex()
       if (!(await index.isCreated())) {
-        console.log(
-          Colorize.output(
+    
+          console.log(
             `No index was found. Please run 'Coderobot create' first.`
           )
-        )
+        
         return
       }
       if (!(await index.hasKeys())) {
         console.log(
-          Colorize.output(
-            [
-              `A Coderobot index was found but you haven't configured your personal OpenAI key.`
-            ].join(`\n`)
-          )
+          `A Coderobot index was found but you haven't configured your personal OpenAI key.`
         )
+
         return
       }
       // Rebuild index
-      Colorize.title("Rebuilding code index")
+      console.log("Rebuilding code index")
       await index.rebuild()
-      console.log(
-        Colorize.output(
-          [`\nThe index for your source code has been rebuilt.`].join("\n")
-        )
-      )
+
+      console.log(`The index for your source code has been rebuilt.`)
     })
     .command(
       "remove",
@@ -240,37 +215,29 @@ export async function run() {
         // Ensure index exists and has keys
         const index = new CodeIndex()
         if (!(await index.isCreated())) {
-          console.log(
-            Colorize.output(
+          
+            console.log(
               `No index was found. Please run 'coderobot create' first.`
             )
-          )
+          
           return
         }
         if (!(await index.hasKeys())) {
           console.log(
-            Colorize.output(
-              [
-                `A Coderobot index was found but you haven't configured your personal OpenAI key.`
-              ].join(`\n`)
-            )
+            `A Coderobot index was found but you haven't configured your personal OpenAI key.`
           )
+
           return
         }
         // Removing sources and/or extensions
-        Colorize.title("Updating sources and/or extensions")
+        console.log("Updating sources and/or extensions")
         await index.remove({
           extensions: arguments_.extension,
           sources: arguments_.source
         })
+
         console.log(
-          Colorize.output(
-            [
-              `Your sources and/or extensions have been updated.`,
-              `You can rebuild your index by running:\n`,
-              `Coderobot rebuild\n`
-            ].join("\n")
-          )
+          `Your sources and/or extensions have been updated.You can rebuild your index by running Coderobot rebuild`
         )
       }
     )
@@ -295,13 +262,13 @@ export async function run() {
       async (arguments_) => {
         const index = new CodeIndex()
         if (arguments_.key) {
-          Colorize.output(`Updating OpenAI key`)
+          console.log(`Updating OpenAI key`)
           await index.setKeys({ apiKey: arguments_.key })
         }
         if (!arguments_.model) {
           return
         }
-        Colorize.output(`Updating model`)
+        console.log(`Updating model`)
         const config = getOptimalConfig(
           arguments_.model,
           arguments_.source,

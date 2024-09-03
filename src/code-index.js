@@ -3,7 +3,6 @@ import { mkdir, readFile, rm, stat,writeFile } from "node:fs/promises"
 import path from "node:path"
 import { FileFetcher, LocalDocumentIndex, OpenAIEmbeddings } from "vectra"
 
-import Colorize from "./colorize.js"
 import { vectraKeysError } from "./dumb-errors.js"
 import ignore from "./ignore.js"
 
@@ -196,7 +195,7 @@ export class CodeIndex {
           return true
         } else {
           // Upsert document
-          Colorize.progress(`adding: ${uri}`)
+          console.log(`adding: ${uri}`)
           await index.upsertDocument(uri, text, documentType)
           return true
         }
