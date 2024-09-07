@@ -31,7 +31,7 @@ const createFileFunction = {
  */
 function addCreateFile(coderobot) {
   coderobot.addFunction(createFileFunction, async (arguments_) => {
-    console.log("arguments_", arguments_)
+   // console.log("arguments_", arguments_)
     const { contents, filePath } = arguments_
     console.log("creating file at filePath:", filePath)
     // Check if the file already exists
