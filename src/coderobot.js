@@ -4,6 +4,8 @@ import { ConversationHistory, Prompt, SystemMessage, UserMessage } from "promptr
 import addCreateFile from "./create-file.js";
 import addModifyFile from "./modify-file.js";
 import { SourceCodeSection } from "./source-code-section.js";
+import fs from "node:fs";
+import path from "node:path";
 
 /**
  * Main class for the Coderobot application.
@@ -17,7 +19,7 @@ class Coderobot {
     this._functions = new Map();
     this._index = index;
     addCreateFile(this);
-    addModifyFile(this); // Uncomment to enable modify file functionality
+    //addModifyFile(this); // Uncomment to enable modify file functionality
   }
 
   /**
@@ -32,6 +34,28 @@ class Coderobot {
 
   async errorResult(result) {
     console.error(result.message ? `${result.status}: ${result.message}` : `Result status '${result.status}' was returned.`);
+  }
+
+  /**
+   * Save question and reply to a file in the indexed folder.
+   * @param question The user's question.
+   * @param reply The bot's reply.
+   */
+  saveConversation(question, reply) {
+    const folderPath = this._index.folderPath;
+    const timestamp = new Date().toISOString();
+    const filename = `conversation-${timestamp}.txt`;
+    const filepath = path.join(folderPath, filename);
+
+    const content = `User: ${question}\nBot: ${reply}\n`;
+
+    fs.appendFile(filepath, content, (err) => {
+      if (err) {
+        console.error("Failed to save conversation:", err);
+      } else {
+      //  console.log("Conversation saved successfully.");
+      }
+    });
   }
 
   /**
@@ -56,6 +80,7 @@ class Coderobot {
         case "success": {
           const { content, function_call } = result.message;
           console.log(content);
+          this.saveConversation(question, content);
 
           if (function_call) {
             const entry = this._functions.get(function_call.name);
@@ -117,6 +142,7 @@ class Coderobot {
               respond(`Function '${function_call.name}' not found.`);
             }
           } else {
+            this.saveConversation(input, content);
             respond(content);
           }
           break;
