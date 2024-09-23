@@ -1,13 +1,16 @@
 import exists from "elliotisms/exists"
-import { mkdir, readFile, rm, stat,writeFile } from "node:fs/promises"
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises"
 import path from "node:path"
 import { FileFetcher, LocalDocumentIndex, OpenAIEmbeddings } from "vectra"
-
+import { Spinner } from "@topcli/spinner"
 import { vectraKeysError } from "./dumb-errors.js"
 import ignore from "./ignore.js"
-
+import 'dotenv/config';
 const noIndexError =
   "Index has not been created yet. Please run `coderobot create` first."
+
+let openaiKey = process.env.OPENAI_API_KEY;
+
 
 // LLM-REGION
 /**
@@ -21,7 +24,7 @@ export class CodeIndex {
   constructor(folderPath = "./.coderobot") {
     this._folderPath = folderPath
     this._configFile = path.join(this._folderPath, "config.json")
-    this._vectraKeys = path.join(this._folderPath, "vectra.keys")
+    //this._vectraKeys = path.join(this._folderPath, "vectra.keys")
   }
   /**
    * Adds sources and extensions to the index.
@@ -77,17 +80,17 @@ export class CodeIndex {
       // Create config file
       await writeFile(this._configFile, JSON.stringify(config))
       // Create keys file
-      await writeFile(this._vectraKeys, JSON.stringify(key))
+     // await writeFile(this._vectraKeys, JSON.stringify(key))
       // Create .gitignore file
       // await writeFile(this._vectraKeys, "{}")
       this._config = config
-      this._keys = key
+    //  this._keys = key
       // Create index
       const index = await this.load()
       await index.createIndex()
     } catch (error) {
       this._config = undefined
-      this._keys = undefined
+    //  this._keys = undefined
       await rm(this._folderPath, { recursive: true })
       throw new Error(`Error creating index: ${error.toString()}`)
     }
@@ -98,7 +101,7 @@ export class CodeIndex {
   async delete() {
     await rm(this._folderPath, { recursive: true })
     this._config = undefined
-    this._keys = undefined
+   // this._keys = undefined
     this._index = undefined
   }
   // LLM-REGION
@@ -106,7 +109,7 @@ export class CodeIndex {
    * Returns whether a `vectra.keys` file exists for the index.
    */
   async hasKeys() {
-    return await exists(this._vectraKeys)
+ //   return await exists(this._vectraKeys)
   }
   // LLM-REGION
   /**
@@ -123,13 +126,14 @@ export class CodeIndex {
       let data = await this.readJSON(this._configFile)
       this._config = data
     }
-    if (!this._keys) {
-      this._keys = await this.readJSON(this._vectraKeys)
-    }
+   // if (!this._keys) {
+   //   this._keys = await this.readJSON(this._vectraKeys)
+   // }
     if (!this._index) {
       const folderPath = path.join(this._folderPath, "index")
+   
       const embeddings = new OpenAIEmbeddings(
-        Object.assign({ model: "text-embedding-ada-002" }, this._keys)
+        Object.assign({ model: "text-embedding-3-small" }, {apiKey: openaiKey})
       )
       this._index = new LocalDocumentIndex({
         embeddings,
@@ -149,13 +153,14 @@ export class CodeIndex {
     if (!(await this.isCreated())) {
       throw new Error(noIndexError)
     }
-    if (!(await this.hasKeys())) {
-      vectraKeysError()
-    }
+  //())) {
+  //    console.log("keys problem")
+   // }
     // Query document index
     const index = await this.load()
     return await index.queryDocuments(query, options)
   }
+  
   // LLM-REGION
   async readJSON(file) {
     try {
@@ -174,9 +179,9 @@ export class CodeIndex {
     if (!(await this.isCreated())) {
       throw new Error(noIndexError)
     }
-    if (!(await this.hasKeys())) {
-      vectraKeysError()
-    }
+  //  if (!(await this.hasKeys())) {
+  //    vectraKeysError()
+   // }
     // Create fresh index
     const index = await this.load()
     if (await index.isCatalogCreated()) {
@@ -186,21 +191,23 @@ export class CodeIndex {
 
     // Index files
     const fetcher = new FileFetcher()
-
+    const spinner = new Spinner().start("Start working!")
     for await (const source of this._config.sources) {
       await fetcher.fetch(source, async (uri, text, documentType) => {
         // Ignore binary files
         let shouldIgnore = ignore(uri, documentType)
         if (shouldIgnore) {
+          spinner.text = `Ignoring: ${uri}`
           return true
         } else {
           // Upsert document
-          console.log(`adding: ${uri}`)
+          spinner.text = `adding: ${uri}`
           await index.upsertDocument(uri, text, documentType)
           return true
         }
       })
     }
+    spinner.succeed(`All done`)
   }
   // LLM-REGION
   /**
@@ -275,12 +282,12 @@ export class CodeIndex {
    * @param keys Keys to use.
    */
   async setKeys(keys) {
-    if (!(await this.isCreated())) {
-      throw new Error(noIndexError)
-    }
+ //   if (!(await this.isCreated())) {
+ //     throw new Error(noIndexError)
+ //   }
     // Overwrite keys file
-    await writeFile(this._vectraKeys, JSON.stringify(keys))
-    this._keys = keys
+ //   await writeFile(this._vectraKeys, JSON.stringify(keys))
+ //   this._keys = keys
   }
   // LLM-REGION
   /**
@@ -293,9 +300,9 @@ export class CodeIndex {
         "Index has not been created yet. Please run `coderobot create` first."
       )
     }
-    if (!(await this.hasKeys())) {
-      vectraKeysError()
-    }
+ //  if (!(await this.hasKeys())) {
+  //    vectraKeysError()
+  //  }
     // Ensure index is loaded
     const index = await this.load()
     // Fetch document
@@ -323,7 +330,7 @@ export class CodeIndex {
   /**
    * Gets the current OpenAI keys.
    */
-  get keys() {
-    return this._keys
-  }
+ // get keys() {
+ //   return this._keys
+ // }
 }

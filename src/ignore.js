@@ -101,7 +101,7 @@ const ignores = (filename) => {
     returnedValue = true
   }
   if (returnedValue) {
-    console.warn(`ignoring: ${filename}`)
+   // console.warn(`ignoring: ${filename}`)
   }
   return returnedValue
 }

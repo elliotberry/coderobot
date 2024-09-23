@@ -156,15 +156,46 @@ class Coderobot {
 
     const respond = async (botMessage) => {
       if (botMessage) console.log(botMessage);
-
-      rl.question("User: ", async (input) => {
-        if (input.toLowerCase() === "exit") {
-          rl.close();
-          process.exit();
-        } else {
-          await completePrompt(input);
-        }
-      });
+    
+      const renderExitTip = () => {
+        // Save current cursor position
+        process.stdout.write("\x1b7");
+        // Move cursor to the bottom line
+        process.stdout.write("\x1b[s"); // Save cursor position
+        process.stdout.write("\x1b[999;0H"); // Move cursor to the last line
+        // Move up two lines to leave space for user input
+        process.stdout.write("\x1b[1A");
+        // Clear the current line and the line above it
+        process.stdout.write("\x1b[2K\x1b[1A\x1b[2K");
+    
+        // Move to the last line to print the exit tip
+        process.stdout.write("\x1b[999;0H"); // Move cursor to the last line
+        // Print the exit tip in magenta color
+        process.stdout.write("\x1b[35m(Tip: Type 'exit' anytime to leave this chat. 🐱‍💻)\x1b[0m\n");
+    
+        // Restore cursor position
+        process.stdout.write("\x1b8");
+      };
+    
+      const promptUser = () => {
+        // Render the exit tip before showing the prompt
+        renderExitTip();
+        rl.question("User: ", async (input) => {
+          if (input.toLowerCase() === "exit") {
+            // Clear the tip line and extra input lines when exiting
+            process.stdout.write("\x1b[999;0H"); // Move cursor to the last line
+            process.stdout.write("\x1b[2K"); // Clear the last line
+            process.stdout.write("\x1b[1A\x1b[2K"); // Clear the line above
+            rl.close();
+            process.exit();
+          } else {
+            await completePrompt(input);
+            promptUser(); // Keep the interaction going
+          }
+        });
+      };
+    
+      promptUser(); // Start the interaction
     };
 
     respond("Hello, how can I help you?");
@@ -176,7 +207,7 @@ class Coderobot {
   createModel() {
     const functions = Array.from(this._functions.values()).map((entry) => entry.schema);
     const modelOptions = {
-      apiKey: this._index.keys.apiKey,
+      apiKey: process.env.OPENAI_API_KEY,
       completion_type: "chat",
       max_input_tokens: this._index.config.max_input_tokens,
       max_tokens: this._index.config.max_tokens,

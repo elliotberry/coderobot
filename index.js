@@ -1,26 +1,20 @@
 import { hideBin } from "yargs/helpers"
 import yargs from "yargs/yargs"
 
-import { CodeIndex } from "./code-index.js"
-import Coderobot from "./coderobot.js"
+import { CodeIndex } from "./src/code-index.js"
+import Coderobot from "./src/coderobot.js"
 
 const verifyIndex = async () => {
   // Ensure index exists and has keys
   const index = new CodeIndex()
   if (!(await index.isCreated())) {
     console.log(
-      `We need to first create an index before you can chat with coderobot.`
+      `We need to first create an index. Run index command.`
     )
 
     return
   }
-  if (!(await index.hasKeys())) {
-    console.log(
-      `A Coderobot index was found but you haven't configured your personal OpenAI key.`
-    )
 
-    return
-  }
   // Load index
   await index.load()
   return index
@@ -68,12 +62,6 @@ export async function run() {
             array: true,
             default: "./",
             describe: "source folder(s) to index.",
-            type: "string"
-          })
-          .option("extension", {
-            alias: "e",
-            array: true,
-            describe: "extension(s) to filter to.",
             type: "string"
           })
           .option("command", {
@@ -261,10 +249,10 @@ export async function run() {
       },
       async (arguments_) => {
         const index = new CodeIndex()
-        if (arguments_.key) {
-          console.log(`Updating OpenAI key`)
-          await index.setKeys({ apiKey: arguments_.key })
-        }
+       // if (arguments_.key) {
+       //   console.log(`Updating OpenAI key`)
+       //   await index.setKeys({ apiKey: arguments_.key })
+       // }
         if (!arguments_.model) {
           return
         }
