@@ -1,14 +1,13 @@
+import 'dotenv/config';
+import { Spinner } from "@topcli/spinner"
 import exists from "elliotisms/exists"
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises"
 import path from "node:path"
 import { FileFetcher, LocalDocumentIndex, OpenAIEmbeddings } from "vectra"
-import { Spinner } from "@topcli/spinner"
-import { vectraKeysError } from "./dumb-errors.js"
+
 import ignore from "./ignore.js"
-import 'dotenv/config';
 const noIndexError =
   "Index has not been created yet. Please run `coderobot create` first."
-
 let openaiKey = process.env.OPENAI_API_KEY;
 
 
@@ -24,7 +23,6 @@ export class CodeIndex {
   constructor(folderPath = "./.coderobot") {
     this._folderPath = folderPath
     this._configFile = path.join(this._folderPath, "config.json")
-    //this._vectraKeys = path.join(this._folderPath, "vectra.keys")
   }
   /**
    * Adds sources and extensions to the index.
@@ -40,7 +38,7 @@ export class CodeIndex {
       this._config = JSON.parse(await readFile(configPath, "utf8"))
     }
     // Clone config
-    const newConfig = Object.assign({}, this._config)
+    const newConfig = { ...this._config}
     // Add sources
     if (Array.isArray(config.sources)) {
       for (const source of config.sources) {
@@ -79,18 +77,14 @@ export class CodeIndex {
     try {
       // Create config file
       await writeFile(this._configFile, JSON.stringify(config))
-      // Create keys file
-     // await writeFile(this._vectraKeys, JSON.stringify(key))
-      // Create .gitignore file
-      // await writeFile(this._vectraKeys, "{}")
+   
       this._config = config
-    //  this._keys = key
-      // Create index
+
       const index = await this.load()
       await index.createIndex()
     } catch (error) {
       this._config = undefined
-    //  this._keys = undefined
+
       await rm(this._folderPath, { recursive: true })
       throw new Error(`Error creating index: ${error.toString()}`)
     }
@@ -104,14 +98,8 @@ export class CodeIndex {
    // this._keys = undefined
     this._index = undefined
   }
-  // LLM-REGION
-  /**
-   * Returns whether a `vectra.keys` file exists for the index.
-   */
-  async hasKeys() {
- //   return await exists(this._vectraKeys)
-  }
-  // LLM-REGION
+
+ 
   /**
    * Returns true if the index has been created.
    */
@@ -126,14 +114,12 @@ export class CodeIndex {
       let data = await this.readJSON(this._configFile)
       this._config = data
     }
-   // if (!this._keys) {
-   //   this._keys = await this.readJSON(this._vectraKeys)
-   // }
+
     if (!this._index) {
       const folderPath = path.join(this._folderPath, "index")
    
       const embeddings = new OpenAIEmbeddings(
-        Object.assign({ model: "text-embedding-3-small" }, {apiKey: openaiKey})
+        {apiKey: openaiKey, model: "text-embedding-3-small"}
       )
       this._index = new LocalDocumentIndex({
         embeddings,
@@ -215,7 +201,7 @@ export class CodeIndex {
    * @param config The configuration containing the sources and extensions to remove.
    */
   async remove(config) {
-    var _a
+    let _a
     if (!(await this.isCreated())) {
       throw new Error(noIndexError)
     }
@@ -225,7 +211,7 @@ export class CodeIndex {
       this._config = JSON.parse(await readFile(configPath, "utf8"))
     }
     // Clone config
-    const newConfig = Object.assign({}, this._config)
+    const newConfig = { ...this._config}
     // Remove sources
     if (Array.isArray(config.sources)) {
       newConfig.sources = newConfig.sources.filter(
@@ -258,7 +244,7 @@ export class CodeIndex {
       this._config = JSON.parse(await readFile(configPath, "utf8"))
     }
     // Clone config
-    const newConfig = Object.assign({}, this._config)
+    const newConfig = { ...this._config}
     // Apply changes
     if (config.model !== undefined) {
       newConfig.model = config.model

@@ -24,7 +24,7 @@ const verifyIndex = async () => {
  * Defines the commands supported by the coderobot CLI.
  */
 export async function run() {
-  const arguments_ = await yargs(hideBin(process.argv))
+ await yargs(hideBin(process.argv))
     .scriptName("coderobot")
     .command("$0", "chat mode", {}, async () => {
       const index = await verifyIndex()
@@ -103,7 +103,7 @@ export async function run() {
       "delete",
       `delete an existing code index`,
       {},
-      async (arguments_) => {
+      async () => {
         const index = new CodeIndex()
         await index.delete()
         console.log(`Your index was deleted.`)
