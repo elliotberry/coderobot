@@ -3,8 +3,10 @@ import { Spinner } from "@topcli/spinner"
 import exists from "elliotisms/exists"
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises"
 import path from "node:path"
-import { FileFetcher, LocalDocumentIndex, OpenAIEmbeddings } from "vectra"
 
+import FileFetcher from './vektra/file-fetcher.js'
+import LocalDocumentIndex from './vektra/local-document-index.js'
+import OpenAIEmbeddings from './vektra/openai-embeddings.js'
 import ignore from "./ignore.js"
 const noIndexError =
   "Index has not been created yet. Please run `coderobot create` first."
@@ -165,10 +167,7 @@ export class CodeIndex {
     if (!(await this.isCreated())) {
       throw new Error(noIndexError)
     }
-  //  if (!(await this.hasKeys())) {
-  //    vectraKeysError()
-   // }
-    // Create fresh index
+
     const index = await this.load()
     if (await index.isCatalogCreated()) {
       await index.deleteIndex()

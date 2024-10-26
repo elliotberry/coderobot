@@ -15,10 +15,12 @@
     "dependencies": {
         "@topcli/spinner": "^2.1.2",
         "alphawave": "0.21.3",
-        "elliotisms": "^0.0.46",
+        "elliotisms": "^0.0.49",
+        "gpt-3-encoder": "^1.1.4",
         "is-binary": "^0.1.0",
         "json-colorizer": "^3.0.1",
         "junk": "^4.0.1",
+        "nanoid": "^5.0.7",
         "promptrix": "0.5.0",
         "unified": "^11.0.5",
         "vectra": "^0.9.0",

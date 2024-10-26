@@ -1,4 +1,4 @@
-import { PromptSectionBase } from "promptrix"
+import PromptSectionBase from "./prompt-section-base.js"
 
 /**
  * A section that renders source code snippets from the code index.

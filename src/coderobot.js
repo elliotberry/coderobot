@@ -5,7 +5,7 @@ import * as readline from "node:readline";
 import { ConversationHistory, Prompt, SystemMessage, UserMessage } from "promptrix";
 
 import addCreateFile from "./create-file.js";
-import addModifyFile from "./modify-file.js";
+
 import { SourceCodeSection } from "./source-code-section.js";
 
 /**
