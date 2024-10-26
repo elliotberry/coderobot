@@ -5,11 +5,9 @@ const ALPHANUMERIC_CHARS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
 
 class TextSplitter {
     constructor(config = {}) {
-        this._config = Object.assign({
-            keepSeparators: false,
+        this._config = {chunkOverlap: 40,
             chunkSize: 400,
-            chunkOverlap: 40,
-        }, config);
+            keepSeparators: false, ...config};
 
         // Create a default tokenizer if none is provided
         if (!this._config.tokenizer) {
@@ -31,93 +29,12 @@ class TextSplitter {
         }
     }
 
-    split(text) {
-        const chunks = this.recursiveSplit(text, this._config.separators, 0);
-
-        const that = this;
-        function getOverlapTokens(tokens) {
-            if (tokens != undefined) {
-                const len = tokens.length > that._config.chunkOverlap ? that._config.chunkOverlap : tokens.length;
-                return tokens.slice(0, len);
-            } else {
-                return [];
-            }
-        }
-
-        // Add overlap tokens and text to the start and end of each chunk
-        if (this._config.chunkOverlap > 0) {
-            for (let i = 1; i < chunks.length; i++) {
-                const previousChunk = chunks[i - 1];
-                const chunk = chunks[i];
-                const nextChunk = i < chunks.length - 1 ? chunks[i + 1] : undefined;
-                chunk.startOverlap = getOverlapTokens(previousChunk.tokens.reverse()).reverse();
-                chunk.endOverlap = getOverlapTokens(nextChunk?.tokens);
-            }
-        }
-
-        return chunks;
-    }
-
-    recursiveSplit(text, separators, startPos) {
-        const chunks = [];
-        if (text.length > 0) {
-            let parts;
-            let separator = '';
-            const nextSeparators = separators.length > 1 ? separators.slice(1) : [];
-            if (separators.length > 0) {
-                separator = separators[0];
-                parts = separator == ' ' ? this.splitBySpaces(text) : text.split(separator);
-            } else {
-                const half = Math.floor(text.length / 2);
-                parts = [text.substring(0, half), text.substring(half)];
-            }
-
-            for (let i = 0; i < parts.length; i++) {
-                const lastChunk = (i === parts.length - 1);
-                let chunk = parts[i];
-                const endPos = (startPos + (chunk.length - 1)) + (lastChunk ? 0 : separator.length);
-                if (this._config.keepSeparators && !lastChunk) {
-                    chunk += separator;
-                }
-
-                if (!this.containsAlphanumeric(chunk)) {
-                    continue;
-                }
-
-                if (chunk.length / 6 > this._config.chunkSize) {
-                    const subChunks = this.recursiveSplit(chunk, nextSeparators, startPos);
-                    chunks.push(...subChunks);
-                } else {
-                    const tokens = this._config.tokenizer.encode(chunk);
-                    if (tokens.length > this._config.chunkSize) {
-                        const subChunks = this.recursiveSplit(chunk, nextSeparators, startPos);
-                        chunks.push(...subChunks);
-                    } else {
-                        chunks.push({
-                            text: chunk,
-                            tokens: tokens,
-                            startPos: startPos,
-                            endPos: endPos,
-                            startOverlap: [],
-                            endOverlap: [],
-                        });
-                    }
-                }
-
-                startPos = endPos + 1;
-            }
-        }
-
-        return this.combineChunks(chunks);
-    }
-
     combineChunks(chunks) {
         const combinedChunks = [];
         let currentChunk;
         let currentLength = 0;
         const separator = this._config.keepSeparators ? '' : ' ';
-        for (let i = 0; i < chunks.length; i++) {
-            const chunk = chunks[i];
+        for (const chunk of chunks) {
             if (currentChunk) {
                 const length = currentChunk.tokens.length + chunk.tokens.length;
                 if (length > this._config.chunkSize) {
@@ -142,33 +59,17 @@ class TextSplitter {
     }
 
     containsAlphanumeric(text) {
-        for (let i = 0; i < text.length; i++) {
-            if (ALPHANUMERIC_CHARS.includes(text[i])) {
+        for (const element of text) {
+            if (ALPHANUMERIC_CHARS.includes(element)) {
                 return true;
             }
         }
         return false;
     }
 
-    splitBySpaces(text) {
-        const parts = [];
-        let tokens = this._config.tokenizer.encode(text);
-        do {
-            if (tokens.length <= this._config.chunkSize) {
-                parts.push(this._config.tokenizer.decode(tokens));
-                break;
-            } else {
-                const span = tokens.splice(0, this._config.chunkSize);
-                parts.push(this._config.tokenizer.decode(span));
-            }
-        } while (true);
-
-        return parts;
-    }
-
-    getSeparators(docType) {
-        switch (docType ?? '') {
-            case "cpp":
+    getSeparators(documentType) {
+        switch (documentType ?? '') {
+            case "cpp": {
                 return [
                     "\nclass ",
                     "\nvoid ",
@@ -184,7 +85,8 @@ class TextSplitter {
                     "\n",
                     " "
                 ];
-            case "go":
+            }
+            case "go": {
                 return [
                     "\nfunc ",
                     "\nvar ",
@@ -198,13 +100,14 @@ class TextSplitter {
                     "\n",
                     " "
                 ];
+            }
             case "java":
             case "c#":
             case "csharp":
             case "cs":
             case "ts":
             case "tsx":
-            case "typescript":
+            case "typescript": {
                 return [
                     "// LLM-REGION",
                     "/* LLM-REGION",
@@ -223,9 +126,10 @@ class TextSplitter {
                     "\n",
                     " "
                 ];
+            }
             case "js":
             case "jsx":
-            case "javascript":
+            case "javascript": {
                 return [
                     "// LLM-REGION",
                     "/* LLM-REGION",
@@ -246,7 +150,8 @@ class TextSplitter {
                     "\n",
                     " "
                 ];
-            case "php":
+            }
+            case "php": {
                 return [
                     "\nfunction ",
                     "\nclass ",
@@ -260,7 +165,8 @@ class TextSplitter {
                     "\n",
                     " "
                 ];
-            case "proto":
+            }
+            case "proto": {
                 return [
                     "\nmessage ",
                     "\nservice ",
@@ -272,8 +178,9 @@ class TextSplitter {
                     "\n",
                     " "
                 ];
+            }
             case "python":
-            case "py":
+            case "py": {
                 return [
                     "\nclass ",
                     "\ndef ",
@@ -282,7 +189,8 @@ class TextSplitter {
                     "\n",
                     " "
                 ];
-            case "rst":
+            }
+            case "rst": {
                 return [
                     "\n===\n",
                     "\n---\n",
@@ -292,7 +200,8 @@ class TextSplitter {
                     "\n",
                     " "
                 ];
-            case "ruby":
+            }
+            case "ruby": {
                 return [
                     "\ndef ",
                     "\nclass ",
@@ -307,7 +216,8 @@ class TextSplitter {
                     "\n",
                     " "
                 ];
-            case "rust":
+            }
+            case "rust": {
                 return [
                     "\nfn ",
                     "\nconst ",
@@ -322,7 +232,8 @@ class TextSplitter {
                     "\n",
                     " "
                 ];
-            case "scala":
+            }
+            case "scala": {
                 return [
                     "\nclass ",
                     "\nobject ",
@@ -338,7 +249,8 @@ class TextSplitter {
                     "\n",
                     " "
                 ];
-            case "swift":
+            }
+            case "swift": {
                 return [
                     "\nfunc ",
                     "\nclass ",
@@ -354,8 +266,9 @@ class TextSplitter {
                     "\n",
                     " "
                 ];
+            }
             case "md":
-            case "markdown":
+            case "markdown": {
                 return [
                     "\n## ",
                     "\n### ",
@@ -371,7 +284,8 @@ class TextSplitter {
                     "\n",
                     " "
                 ];
-            case "latex":
+            }
+            case "latex": {
                 return [
                     "\n\chapter{",
                     "\n\section{",
@@ -392,7 +306,8 @@ class TextSplitter {
                     "\n",
                     " "
                 ];
-            case "html":
+            }
+            case "html": {
                 return [
                     "<body>",
                     "<div>",
@@ -422,7 +337,8 @@ class TextSplitter {
                     "<title>",
                     " "
                 ];
-            case "sol":
+            }
+            case "sol": {
                 return [
                     "\npragma ",
                     "\nusing ",
@@ -446,14 +362,112 @@ class TextSplitter {
                     "\n",
                     " "
                 ];
-            default:
+            }
+            default: {
                 return [
                     "\n\n",
                     "\n",
                     " ",
                     "",
                 ];
+            }
         }
+    }
+
+    recursiveSplit(text, separators, startPos) {
+        const chunks = [];
+        if (text.length > 0) {
+            let parts;
+            let separator = '';
+            const nextSeparators = separators.length > 1 ? separators.slice(1) : [];
+            if (separators.length > 0) {
+                separator = separators[0];
+                parts = separator == ' ' ? this.splitBySpaces(text) : text.split(separator);
+            } else {
+                const half = Math.floor(text.length / 2);
+                parts = [text.slice(0, Math.max(0, half)), text.slice(Math.max(0, half))];
+            }
+
+            for (let index = 0; index < parts.length; index++) {
+                const lastChunk = (index === parts.length - 1);
+                let chunk = parts[index];
+                const endPos = (startPos + (chunk.length - 1)) + (lastChunk ? 0 : separator.length);
+                if (this._config.keepSeparators && !lastChunk) {
+                    chunk += separator;
+                }
+
+                if (!this.containsAlphanumeric(chunk)) {
+                    continue;
+                }
+
+                if (chunk.length / 6 > this._config.chunkSize) {
+                    const subChunks = this.recursiveSplit(chunk, nextSeparators, startPos);
+                    chunks.push(...subChunks);
+                } else {
+                    const tokens = this._config.tokenizer.encode(chunk);
+                    if (tokens.length > this._config.chunkSize) {
+                        const subChunks = this.recursiveSplit(chunk, nextSeparators, startPos);
+                        chunks.push(...subChunks);
+                    } else {
+                        chunks.push({
+                            endOverlap: [],
+                            endPos: endPos,
+                            startOverlap: [],
+                            startPos: startPos,
+                            text: chunk,
+                            tokens: tokens,
+                        });
+                    }
+                }
+
+                startPos = endPos + 1;
+            }
+        }
+
+        return this.combineChunks(chunks);
+    }
+
+    split(text) {
+        const chunks = this.recursiveSplit(text, this._config.separators, 0);
+
+        const that = this;
+        function getOverlapTokens(tokens) {
+            if (tokens == undefined) {
+                return [];
+            } else {
+                const length = Math.min(tokens.length, that._config.chunkOverlap);
+                return tokens.slice(0, length);
+            }
+        }
+
+        // Add overlap tokens and text to the start and end of each chunk
+        if (this._config.chunkOverlap > 0) {
+            for (let index = 1; index < chunks.length; index++) {
+                const previousChunk = chunks[index - 1];
+                const chunk = chunks[index];
+                const nextChunk = index < chunks.length - 1 ? chunks[index + 1] : undefined;
+                chunk.startOverlap = getOverlapTokens(previousChunk.tokens.reverse()).reverse();
+                chunk.endOverlap = getOverlapTokens(nextChunk?.tokens);
+            }
+        }
+
+        return chunks;
+    }
+
+    splitBySpaces(text) {
+        const parts = [];
+        let tokens = this._config.tokenizer.encode(text);
+        do {
+            if (tokens.length <= this._config.chunkSize) {
+                parts.push(this._config.tokenizer.decode(tokens));
+                break;
+            } else {
+                const span = tokens.splice(0, this._config.chunkSize);
+                parts.push(this._config.tokenizer.decode(span));
+            }
+        } while (true);
+
+        return parts;
     }
 }
 
