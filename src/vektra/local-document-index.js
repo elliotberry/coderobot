@@ -398,7 +398,7 @@ class LocalDocumentIndex {
     }
 
     const { chunkBatches, chunks } = await this.splitText(text, config)
-console.log("chunkBatches", chunkBatches)
+
     const embeddings = []
     for (const batch of chunkBatches) {
       let response

@@ -1,4 +1,4 @@
-import {encode, decode} from 'gpt-3-encoder';
+import {encode, decode} from 'gpt-tokenizer/model/gpt-4o';
 
 /**
  * Tokenizer that uses GPT-3's encoder.

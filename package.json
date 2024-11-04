@@ -17,6 +17,7 @@
         "alphawave": "0.21.3",
         "elliotisms": "^0.0.49",
         "gpt-3-encoder": "^1.1.4",
+        "gpt-tokenizer": "^2.6.0",
         "is-binary": "^0.1.0",
         "json-colorizer": "^3.0.1",
         "junk": "^4.0.1",
