@@ -3,6 +3,7 @@ import path from 'node:path';
 
 class FileFetcher {
     async fetch(uri, onDocument) {
+         uri = path.resolve(uri);
         // Does path exist and is it a directory?
         let isDirectory;
         try {
@@ -26,6 +27,9 @@ class FileFetcher {
         
             let pathData = path.parse(uri);
             let ext = pathData.ext;
+            if (!ext) {
+                ext = "none";
+            }
             return await onDocument(uri, text, ext ? ext : undefined);
         }
     }
