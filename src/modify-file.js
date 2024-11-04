@@ -17,8 +17,7 @@ async function applyUnifiedDiff(filePath, unifiedDiff) {
 
         // Find the start of the diff hunk
         if (line.startsWith('@@')) {
-            const hunkHeader = line;
-            const match = hunkHeader.match(/@@ -(\d+),(\d+) \+(\d+),(\d+) @@/);
+            const match = line.match(/@@ -(\d+),(\d+) \+(\d+),(\d+) @@/);
             if (!match) continue;
 
             const oldStartLine = Number.parseInt(match[1], 10) - 1; // 0-based index

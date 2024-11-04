@@ -1,6 +1,6 @@
+import isBinary from "is-binary"
 import { isJunk } from "junk"
 import path from "node:path"
-import isBinary from "is-binary"
 
 const IGNORED_FILES = new Set([
   ".gif",

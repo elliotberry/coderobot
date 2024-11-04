@@ -5,27 +5,9 @@ export class OpenAIEmbeddings {
     this.options = options
 
     this._clientType = ClientType.OpenAI
-    this.options = Object.assign(
-      {
-        retryPolicy: [2000, 5000]
-      },
-      options
-    )
-  }
-
-  async createEmbeddings(inputs) {
-    const startTime = Date.now()
-    const response = await this.createEmbeddingRequest({ input: inputs })
-
-    const data = await response.json()
-    if (!response.ok) {
-      throw new Error(`${data.error.code}: ${data.error.message}`)
-    }
-    return {
-      status: "success",
-      output: data.data
-        .sort((a, b) => a.index - b.index)
-        .map((item) => item.embedding)
+    this.options = {
+      retryPolicy: [2000, 5000],
+      ...options
     }
   }
 
@@ -40,11 +22,27 @@ export class OpenAIEmbeddings {
     return this.post(url, request)
   }
 
+  async createEmbeddings(inputs) {
+    
+    const response = await this.createEmbeddingRequest({ input: inputs })
+
+    const data = await response.json()
+    if (!response.ok) {
+      throw new Error(`${data.error.code}: ${data.error.message}`)
+    }
+    return {
+      output: data.data
+        .sort((a, b) => a.index - b.index)
+        .map((item) => item.embedding),
+      status: "success"
+    }
+  }
+
   async post(url, body, retryCount = 0) {
-    const requestConfig = Object.assign(
-      { method: "POST", body: JSON.stringify(body) },
-      this.options.requestConfig
-    )
+    const requestConfig = {
+      body: JSON.stringify(body), method: "POST",
+      ...this.options.requestConfig
+    }
 
     requestConfig.headers = requestConfig.headers || {}
     requestConfig.headers["Content-Type"] = "application/json"
@@ -55,7 +53,7 @@ export class OpenAIEmbeddings {
       requestConfig.headers["api-key"] = options.azureApiKey
     } else if (this._clientType === ClientType.OpenAI) {
       const options = this.options
-      requestConfig.headers["Authorization"] = `Bearer ${options.apiKey}`
+      requestConfig.headers.Authorization = `Bearer ${options.apiKey}`
       if (options.organization) {
         requestConfig.headers["OpenAI-Organization"] = options.organization
       }
@@ -78,8 +76,8 @@ export class OpenAIEmbeddings {
 }
 
 const ClientType = {
-  OpenAI: "OpenAI",
   AzureOpenAI: "AzureOpenAI",
+  OpenAI: "OpenAI",
   OSS: "OSS"
 }
 

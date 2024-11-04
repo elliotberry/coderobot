@@ -5,7 +5,6 @@ import * as readline from "node:readline";
 import { ConversationHistory, Prompt, SystemMessage, UserMessage } from "promptrix";
 
 import addCreateFile from "./create-file.js";
-
 import { SourceCodeSection } from "./source-code-section.js";
 
 /**
@@ -116,10 +115,10 @@ class Coderobot {
             process.stdout.write("\u001B[1A\u001B[2K"); // Clear the line above
             rl.close();
             process.exit();
-          } else {
-            await completePrompt(input);
-            promptUser(); // Keep the interaction going
+            return;
           }
+          await completePrompt(input);
+          promptUser(); // Keep the interaction going
         });
       };
     

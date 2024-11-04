@@ -4,10 +4,10 @@ import exists from "elliotisms/exists"
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises"
 import path from "node:path"
 
+import ignore from "./ignore.js"
 import FileFetcher from './vektra/file-fetcher.js'
 import LocalDocumentIndex from './vektra/local-document-index.js'
 import OpenAIEmbeddings from './vektra/openai-embeddings.js'
-import ignore from "./ignore.js"
 const noIndexError =
   "Index has not been created yet. Please run `coderobot create` first."
 let openaiKey = process.env.OPENAI_API_KEY;

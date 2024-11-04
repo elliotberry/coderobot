@@ -1,4 +1,4 @@
-import GPT3Tokenizer from "./GPT3-tokenizer.js"
+import GPT3Tokenizer from "./tokenizer.js"
 
 const ALPHANUMERIC_CHARS =
   "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -403,11 +403,11 @@ class TextSplitter {
           } else {
             chunks.push({
               endOverlap: [],
-              endPos: endPos,
+              endPos,
               startOverlap: [],
-              startPos: startPos,
+              startPos,
               text: chunk,
-              tokens: tokens
+              tokens
             })
           }
         }
@@ -451,7 +451,7 @@ class TextSplitter {
 
   splitBySpaces(text) {
     const parts = []
-    let tokens = this._config.tokenizer.encode(text)
+    const tokens = this._config.tokenizer.encode(text)
     do {
       if (tokens.length <= this._config.chunkSize) {
         parts.push(this._config.tokenizer.decode(tokens))

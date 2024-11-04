@@ -15,22 +15,20 @@ class LocalDocumentResult extends LocalDocument {
 
         // Compute average score
         let score = 0;
-        this._chunks.forEach(chunk => score += chunk.score);
+        for (const chunk of this._chunks) score += chunk.score;
         this._score = score / this._chunks.length;
     }
 
-    /**
-     * Returns the chunks of the document that matched the query.
-     */
-    get chunks() {
-        return this._chunks;
+    encodeAfterText(text, budget) {
+        const maxLength = budget * 8;
+        const substr = text.length <= maxLength ? text : text.slice(0, Math.max(0, maxLength));
+        return this._tokenizer.encode(substr);
     }
 
-    /**
-     * Returns the average score of the document result.
-     */
-    get score() {
-        return this._score;
+    encodeBeforeText(text, budget) {
+        const maxLength = budget * 8;
+        const substr = text.length <= maxLength ? text : text.slice(Math.max(0, text.length - maxLength));
+        return this._tokenizer.encode(substr);
     }
 
     /**
@@ -47,7 +45,7 @@ class LocalDocumentResult extends LocalDocument {
         // Add chunks to a temp array and split any chunks that are longer than maxTokens.
         const chunks = [];
 
-        this._chunks.forEach(chunk => {
+        for (const chunk of this._chunks) {
             const startPos = chunk.item.metadata.startPos;
             const endPos = chunk.item.metadata.endPos;
             const chunkText = text.substring(startPos, endPos + 1);
@@ -56,15 +54,15 @@ class LocalDocumentResult extends LocalDocument {
             while (offset < tokens.length) {
                 const chunkLength = Math.min(maxTokens, tokens.length - offset);
                 chunks.push({
-                    text: this._tokenizer.decode(tokens.slice(offset, offset + chunkLength)),
-                    startPos: startPos + offset,
                     endPos: startPos + offset + chunkLength - 1,
                     score: chunk.score,
+                    startPos: startPos + offset,
+                    text: this._tokenizer.decode(tokens.slice(offset, offset + chunkLength)),
                     tokenCount: chunkLength
                 });
                 offset += chunkLength;
             }
-        });
+        }
 
         // Sort chunks by startPos
         const sorted = chunks.sort(({startPos}, {startPos2}) => startPos - startPos2);
@@ -72,8 +70,8 @@ class LocalDocumentResult extends LocalDocument {
         // Generate sections
         const sections = [];
 
-        sorted.forEach(chunk => {
-            let section = sections[sections.length - 1];
+        for (const chunk of sorted) {
+            let section = sections.at(-1);
             if (!section || section.tokenCount + chunk.tokenCount > maxTokens) {
                 section = {
                     chunks: [],
@@ -85,19 +83,19 @@ class LocalDocumentResult extends LocalDocument {
             section.chunks.push(chunk);
             section.score += chunk.score;
             section.tokenCount += chunk.tokenCount;
-        });
+        }
 
         // Normalize section scores
-        sections.forEach(section => section.score /= section.chunks.length);
+        for (const section of sections) section.score /= section.chunks.length;
 
         // Return final rendered sections
         return sections.map(section => {
             let text = '';
-            section.chunks.forEach(chunk => text += chunk.text);
+            for (const chunk of section.chunks) text += chunk.text;
             return {
+                score: section.score,
                 text,
-                tokenCount: section.tokenCount,
-                score: section.score
+                tokenCount: section.tokenCount
             };
         });
     }
@@ -119,9 +117,9 @@ class LocalDocumentResult extends LocalDocument {
         const length = await this.getLength();
         if (length <= maxTokens) {
             return [{
+                score: 1,
                 text,
-                tokenCount: length,
-                score: 1.0
+                tokenCount: length
             }];
         }
 
@@ -131,10 +129,10 @@ class LocalDocumentResult extends LocalDocument {
             const endPos = item.metadata.endPos;
             const chunkText = text.substring(startPos, endPos + 1);
             return {
-                text: chunkText,
-                startPos,
                 endPos,
                 score,
+                startPos,
+                text: chunkText,
                 tokenCount: this._tokenizer.encode(chunkText).length
             };
         }).filter(({tokenCount}) => tokenCount <= maxTokens).sort(({startPos}, {startPos2}) => startPos - startPos2);
@@ -147,17 +145,17 @@ class LocalDocumentResult extends LocalDocument {
             const chunkText = text.substring(startPos, endPos + 1);
             const tokens = this._tokenizer.encode(chunkText);
             return [{
+                score: topChunk.score,
                 text: this._tokenizer.decode(tokens.slice(0, maxTokens)),
-                tokenCount: maxTokens,
-                score: topChunk.score
+                tokenCount: maxTokens
             }];
         }
 
         // Generate sections
         const sections = [];
 
-        chunks.forEach(chunk => {
-            let section = sections[sections.length - 1];
+        for (const chunk of chunks) {
+            let section = sections.at(-1);
             if (!section || section.tokenCount + chunk.tokenCount > maxTokens) {
                 section = {
                     chunks: [],
@@ -169,10 +167,10 @@ class LocalDocumentResult extends LocalDocument {
             section.chunks.push(chunk);
             section.score += chunk.score;
             section.tokenCount += chunk.tokenCount;
-        });
+        }
 
         // Normalize section scores
-        sections.forEach(section => section.score /= section.chunks.length);
+        for (const section of sections) section.score /= section.chunks.length;
 
         // Sort sections by score and limit to maxSections
         sections.sort(({score}, {score1}) => score - score1);
@@ -181,36 +179,36 @@ class LocalDocumentResult extends LocalDocument {
         }
 
         // Combine adjacent chunks of text
-        sections.forEach(section => {
-            for (let i = 0; i < section.chunks.length - 1; i++) {
-                const chunk = section.chunks[i];
-                const nextChunk = section.chunks[i + 1];
+        for (const section of sections) {
+            for (let index = 0; index < section.chunks.length - 1; index++) {
+                const chunk = section.chunks[index];
+                const nextChunk = section.chunks[index + 1];
                 if (chunk.endPos + 1 === nextChunk.startPos) {
                     chunk.text += nextChunk.text;
                     chunk.endPos = nextChunk.endPos;
                     chunk.tokenCount += nextChunk.tokenCount;
-                    section.chunks.splice(i + 1, 1);
-                    i--;
+                    section.chunks.splice(index + 1, 1);
+                    index--;
                 }
             }
-        });
+        }
 
         // Add overlapping chunks of text to each section until the maxTokens is reached
         if (overlappingChunks) {
             const connector = {
-                text: '\n\n...\n\n',
-                startPos: -1,
                 endPos: -1,
                 score: 0,
+                startPos: -1,
+                text: '\n\n...\n\n',
                 tokenCount: this._tokenizer.encode('\n\n...\n\n').length
             };
-            sections.forEach(section => {
+            for (const section of sections) {
                 // Insert connectors between chunks
                 if (section.chunks.length > 1) {
-                    for (let i = 0; i < section.chunks.length - 1; i++) {
-                        section.chunks.splice(i + 1, 0, connector);
+                    for (let index = 0; index < section.chunks.length - 1; index++) {
+                        section.chunks.splice(index + 1, 0, connector);
                         section.tokenCount += connector.tokenCount;
-                        i++;
+                        index++;
                     }
                 }
 
@@ -218,16 +216,16 @@ class LocalDocumentResult extends LocalDocument {
                 let budget = maxTokens - section.tokenCount;
                 if (budget > 40) {
                     const sectionStart = section.chunks[0].startPos;
-                    const sectionEnd = section.chunks[section.chunks.length - 1].endPos;
+                    const sectionEnd = section.chunks.at(-1).endPos;
                     if (sectionStart > 0) {
-                        const beforeTex = text.substring(0, section.chunks[0].startPos);
+                        const beforeTex = text.slice(0, Math.max(0, section.chunks[0].startPos));
                         const beforeTokens = this.encodeBeforeText(beforeTex, Math.ceil(budget/2));
                         const beforeBudget = sectionEnd < text.length - 1 ? Math.min(beforeTokens.length, Math.ceil(budget/2)) : Math.min(beforeTokens.length, budget);
                         const chunk = {
-                            text: this._tokenizer.decode(beforeTokens.slice(-beforeBudget)),
-                            startPos: sectionStart - beforeBudget,
                             endPos: sectionStart - 1,
                             score: 0,
+                            startPos: sectionStart - beforeBudget,
+                            text: this._tokenizer.decode(beforeTokens.slice(-beforeBudget)),
                             tokenCount: beforeBudget
                         };
                         section.chunks.unshift(chunk);
@@ -236,14 +234,14 @@ class LocalDocumentResult extends LocalDocument {
                     }
 
                     if (sectionEnd < text.length - 1) {
-                        const afterText = text.substring(sectionEnd + 1);
+                        const afterText = text.slice(Math.max(0, sectionEnd + 1));
                         const afterTokens = this.encodeAfterText(afterText, budget);
                         const afterBudget = Math.min(afterTokens.length, budget);
                         const chunk = {
-                            text: this._tokenizer.decode(afterTokens.slice(0, afterBudget)),
-                            startPos: sectionEnd + 1,
                             endPos: sectionEnd + afterBudget,
                             score: 0,
+                            startPos: sectionEnd + 1,
+                            text: this._tokenizer.decode(afterTokens.slice(0, afterBudget)),
                             tokenCount: afterBudget
                         };
                         section.chunks.push(chunk);
@@ -251,31 +249,33 @@ class LocalDocumentResult extends LocalDocument {
                         budget -= chunk.tokenCount;
                     }
                 }
-            });
+            }
         }
 
         // Return final rendered sections
         return sections.map(section => {
             let text = '';
-            section.chunks.forEach(chunk => text += chunk.text);
+            for (const chunk of section.chunks) text += chunk.text;
             return {
+                score: section.score,
                 text,
-                tokenCount: section.tokenCount,
-                score: section.score
+                tokenCount: section.tokenCount
             };
         });
     }
 
-    encodeBeforeText(text, budget) {
-        const maxLength = budget * 8;
-        const substr = text.length <= maxLength ? text : text.substring(text.length - maxLength);
-        return this._tokenizer.encode(substr);
+    /**
+     * Returns the chunks of the document that matched the query.
+     */
+    get chunks() {
+        return this._chunks;
     }
     
-    encodeAfterText(text, budget) {
-        const maxLength = budget * 8;
-        const substr = text.length <= maxLength ? text : text.substring(0, maxLength);
-        return this._tokenizer.encode(substr);
+    /**
+     * Returns the average score of the document result.
+     */
+    get score() {
+        return this._score;
     }
 }
 
