@@ -1,7 +1,7 @@
 .coderobot
-#wrangler (cf workers)
+
 .wrangler
-# Compiled source
+
 *.com
 *.class
 *.dll
@@ -11,9 +11,9 @@
 *.env
 # Logs and databases
 *.log
-
-# OS generated files #
 .DS_Store
+*.DS_Store
+*/**/.DS_Store
 .AppleDouble
 .LSOverride
 
