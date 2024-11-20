@@ -2,7 +2,7 @@
     "name": "coderobot",
     "author": "Steven Ickman + elliot",
     "description": "Codepilot is a buddy, pal, and guy.",
-    "version": "0.2.0",
+    "version": "0.2.1",
     "license": "MIT",
     "type": "module",
     "keywords": [
