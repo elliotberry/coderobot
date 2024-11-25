@@ -21,17 +21,16 @@ class FileFetcher {
         await this.fetch(filePath, onDocument)
       }
       return true
-    } else {
-      // Read file and call onDocument
-      const text = await fs.readFile(uri, "utf8")
-
-      let pathData = path.parse(uri)
-      let extension = pathData.ext
-      if (!extension) {
-        extension = "none"
-      }
-      return await onDocument(uri, text, extension ? extension : undefined)
     }
+    // Read file and call onDocument
+    const text = await fs.readFile(uri, "utf8")
+
+    const pathData = path.parse(uri)
+    let extension = pathData.ext
+    if (!extension) {
+      extension = "none"
+    }
+    return await onDocument(uri, text, extension ? extension : undefined)
   }
 }
 

@@ -179,11 +179,11 @@ export class CodeIndex {
     const spinner = new Spinner().start("Start working!")
     for await (const source of this._config.sources) {
       await fetcher.fetch(source, async (uri, text, documentType) => {
-        // Ignore binary files
+       
         let shouldIgnore = ignore(uri, documentType)
         if (shouldIgnore) {
           spinner.text = `Ignoring: ${uri}`
-          return true
+          return false
         } else {
           // Upsert document
           spinner.text = `adding: ${uri}`

@@ -1,4 +1,4 @@
-import {encode, decode} from 'gpt-tokenizer/model/gpt-4o';
+import {decode,encode} from 'gpt-tokenizer/model/gpt-4o';
 
 class GPT3Tokenizer {
     decode(tokens) {

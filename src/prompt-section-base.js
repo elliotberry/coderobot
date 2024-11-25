@@ -11,11 +11,26 @@ export default class PromptSectionBase {
     this.textPrefix = textPrefix;
   }
 
+  static getMessageText(message) {
+    let text = message.content ?? '';
+    if (message.function_call) {
+      text = JSON.stringify(message.function_call);
+    } else if (message.name) {
+      text = `${message.name} returned ${text}`;
+    }
+
+    return text;
+  }
+
+  async renderAsMessages() {
+    throw new Error('renderAsMessages must be implemented by subclass');
+  }
+
   async renderAsText(memory, functions, tokenizer, maxTokens) {
     const asMessages = await this.renderAsMessages(memory, functions, tokenizer, maxTokens);
 
     if (asMessages.output.length === 0) {
-      return { output: '', length: 0, tooLong: false };
+      return { length: 0, output: '', tooLong: false };
     }
 
     let text = asMessages.output.map((message) => PromptSectionBase.getMessageText(message)).join(this.separator);
@@ -26,45 +41,30 @@ export default class PromptSectionBase {
 
     text = this.textPrefix + text;
 
-    if (this.tokens > 1.0 && length > this.tokens) {
+    if (this.tokens > 1 && length > this.tokens) {
       const encoded = tokenizer.encode(text);
       text = tokenizer.decode(encoded.slice(0, this.tokens));
       length = this.tokens;
     }
 
-    return { output: text, length: length, tooLong: length > maxTokens };
-  }
-
-  async renderAsMessages(memory, functions, tokenizer, maxTokens) {
-    throw new Error('renderAsMessages must be implemented by subclass');
+    return { length: length, output: text, tooLong: length > maxTokens };
   }
 
   returnMessages(output, length, tokenizer, maxTokens) {
-    if (this.tokens > 1.0) {
+    if (this.tokens > 1) {
       while (length > this.tokens) {
-        const msg = output.pop();
-        const encoded = tokenizer.encode(PromptSectionBase.getMessageText(msg));
+        const message = output.pop();
+        const encoded = tokenizer.encode(PromptSectionBase.getMessageText(message));
         length -= encoded.length;
         if (length < this.tokens) {
           const delta = this.tokens - length;
           const truncated = tokenizer.decode(encoded.slice(0, delta));
-          output.push({ role: msg.role, content: truncated });
+          output.push({ content: truncated, role: message.role });
           length += delta;
         }
       }
     }
 
-    return { output: output, length: length, tooLong: length > maxTokens };
-  }
-
-  static getMessageText(message) {
-    let text = message.content ?? '';
-    if (message.function_call) {
-      text = JSON.stringify(message.function_call);
-    } else if (message.name) {
-      text = `${message.name} returned ${text}`;
-    }
-
-    return text;
+    return { length: length, output: output, tooLong: length > maxTokens };
   }
 }
