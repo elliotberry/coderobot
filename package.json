@@ -2,7 +2,7 @@
     "name": "coderobot",
     "author": "Steven Ickman + elliot",
     "description": "Codepilot is fairtly simple way to load a repo into a local embeddings db and talk to it via a gpt model.",
-    "version": "0.2.1",
+    "version": "0.2.2",
     "license": "The Unlicense",
     "type": "module",
     "keywords": [
